@@ -57,6 +57,7 @@ interface DashboardProps {
   onNavigateToCalendar: () => void;
   onOpenPrintModal: () => void;
   onViewExamDetails?: (exam: ExamItem) => void;
+  onOpenPendingExams?: (mode: 'pending' | 'submitted' | 'all') => void;
   isWidescreen?: boolean;
 }
 
@@ -66,6 +67,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   onNavigateToCalendar,
   onOpenPrintModal,
   onViewExamDetails,
+  onOpenPendingExams,
   isWidescreen = false
 }) => {
   // Mode for exam progress calculation:
@@ -535,8 +537,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
         {/* Card 2: Completed / Submitted */}
         <div 
           onClick={() => {
-            setPendingModalMode('submitted');
-            setPendingModalOpen(true);
+            if (onOpenPendingExams) {
+              onOpenPendingExams('submitted');
+            } else {
+              setPendingModalMode('submitted');
+              setPendingModalOpen(true);
+            }
           }}
           className="bg-white/95 rounded-2xl p-4 sm:p-5 border border-[#F8D7E3] shadow-xs hover:border-emerald-400 hover:shadow-md transition group cursor-pointer active:scale-[0.99]"
           title="คลิกเพื่อดูรายชื่อวิชาที่ส่งข้อสอบแล้ว (พร้อมสอบ)"
@@ -577,8 +583,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
         {/* Card 3: Upcoming / Pending */}
         <div 
           onClick={() => {
-            setPendingModalMode('pending');
-            setPendingModalOpen(true);
+            if (onOpenPendingExams) {
+              onOpenPendingExams('pending');
+            } else {
+              setPendingModalMode('pending');
+              setPendingModalOpen(true);
+            }
           }}
           className="bg-white/95 rounded-2xl p-4 sm:p-5 border border-[#F8D7E3] shadow-xs hover:border-amber-400 hover:shadow-md transition group cursor-pointer active:scale-[0.99]"
           title="คลิกเพื่อดูรายชื่อวิชาที่ยังไม่ได้ส่งข้อสอบ (รอข้อสอบ)"
@@ -754,8 +764,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
           <div className="pt-3 border-t border-[#F8D7E3]/60 grid grid-cols-2 gap-2 text-center text-xs">
             <div 
               onClick={() => {
-                setPendingModalMode('submitted');
-                setPendingModalOpen(true);
+                if (onOpenPendingExams) {
+                  onOpenPendingExams('submitted');
+                } else {
+                  setPendingModalMode('submitted');
+                  setPendingModalOpen(true);
+                }
               }}
               className="p-2 rounded-xl bg-emerald-50/70 border border-emerald-100 hover:border-emerald-300 hover:bg-emerald-100/60 transition cursor-pointer group"
               title="คลิกดูรายชื่อวิชาที่พร้อมสอบ (ส่งข้อสอบแล้ว)"
@@ -770,8 +784,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </div>
             <div 
               onClick={() => {
-                setPendingModalMode('pending');
-                setPendingModalOpen(true);
+                if (onOpenPendingExams) {
+                  onOpenPendingExams('pending');
+                } else {
+                  setPendingModalMode('pending');
+                  setPendingModalOpen(true);
+                }
               }}
               className="p-2 rounded-xl bg-slate-50 border border-slate-200 hover:border-amber-300 hover:bg-amber-50 transition cursor-pointer group"
               title="คลิกดูรายชื่อวิชาที่รอส่งข้อสอบ"
@@ -901,15 +919,17 @@ export const Dashboard: React.FC<DashboardProps> = ({
         </div>
       </div>
 
-      {/* 6. Pending / Submitted Exams Drill-down Modal */}
-      <PendingExamsModal
-        isOpen={pendingModalOpen}
-        onClose={() => setPendingModalOpen(false)}
-        exams={exams}
-        initialMode={pendingModalMode}
-        onNavigateToSchedule={onNavigateToSchedule}
-        onViewExamDetails={onViewExamDetails}
-      />
+      {/* 6. Pending / Submitted Exams Drill-down Modal (Fallback if not handled by full page) */}
+      {!onOpenPendingExams && (
+        <PendingExamsModal
+          isOpen={pendingModalOpen}
+          onClose={() => setPendingModalOpen(false)}
+          exams={exams}
+          initialMode={pendingModalMode}
+          onNavigateToSchedule={onNavigateToSchedule}
+          onViewExamDetails={onViewExamDetails}
+        />
+      )}
     </div>
   );
 };

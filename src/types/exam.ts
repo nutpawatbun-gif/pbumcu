@@ -21,6 +21,8 @@ export interface ExamItem {
   examSubmissionStatus?: 'pending' | 'submitted'; // สถานะการส่งข้อสอบ: 'pending' (รอส่ง), 'submitted' (ส่งแล้ว)
   examSubmissionDate?: string; // วันเวลาที่ส่งข้อสอบ
   examFileName?: string; // ชื่อไฟล์ข้อสอบมาตรฐานที่บันทึก
+  proctors?: string[]; // รายนามกรรมการคุมสอบ
+  studentCount?: number; // จำนวนนิสิตผู้เข้าสอบ
   lastUpdated?: string;
   updatedBy?: string;
 }

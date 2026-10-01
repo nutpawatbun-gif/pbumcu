@@ -56,7 +56,6 @@ interface OfficialTableViewProps {
   onResetFilters: () => void;
   onExportExcel?: () => void;
   onPrint?: () => void;
-  onAddNewExam?: () => void;
   isWidescreen?: boolean;
   onToggleWidescreen?: () => void;
 }
