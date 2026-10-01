@@ -18,6 +18,7 @@ import { ExamUploadDrivePage } from './views/ExamUploadDrivePage';
 import { TeacherLoginPage } from './views/TeacherLoginPage';
 import { ExamEditPage } from './views/ExamEditPage';
 import { PrintSetupPage } from './views/PrintSetupPage';
+import { BatchFolderUploadPage } from './views/BatchFolderUploadPage';
 import { RAW_EXAMS_DATA } from './data/initialExams';
 import { ExamItem, TeacherUser, NotificationSetting } from './types/exam';
 import { 
@@ -203,6 +204,7 @@ export default function App() {
     | { type: 'course-detail'; examId: string; fromTab: string }
     | { type: 'pending-exams'; mode: 'pending' | 'submitted' | 'all'; fromTab: string }
     | { type: 'upload-drive'; examId: string; fromTab: string }
+    | { type: 'folder-upload'; fromTab: string }
     | { type: 'teacher-login'; fromTab: string }
     | { type: 'edit-exam'; examId: string; fromTab: string }
     | { type: 'print-setup'; scope: 'all' | 'teacher' | 'saved'; fromTab: string };
@@ -233,6 +235,16 @@ export default function App() {
   const navigateToUploadDrive = (exam: ExamItem) => {
     setSubPageView({ type: 'upload-drive', examId: exam.id, fromTab: currentTab });
     window.location.hash = `upload-${exam.id}`;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const navigateToFolderUpload = () => {
+    if (!currentUser) {
+      navigateToLogin();
+      return;
+    }
+    setSubPageView({ type: 'folder-upload', fromTab: currentTab });
+    window.location.hash = 'folder-upload';
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -287,6 +299,8 @@ export default function App() {
       } else if (hash.startsWith('upload-')) {
         const id = hash.replace('upload-', '');
         setSubPageView({ type: 'upload-drive', examId: id, fromTab: currentTab });
+      } else if (hash === 'folder-upload') {
+        setSubPageView({ type: 'folder-upload', fromTab: currentTab });
       } else if (hash === 'login') {
         setSubPageView({ type: 'teacher-login', fromTab: currentTab });
       } else if (hash.startsWith('edit-')) {
@@ -717,6 +731,7 @@ export default function App() {
         onExportExcel={handleExportExcel}
         isWidescreen={isWidescreen}
         onToggleWidescreen={handleToggleWidescreen}
+        onNavigateToFolderUpload={navigateToFolderUpload}
       />
 
       {/* Main Container */}
@@ -766,6 +781,19 @@ export default function App() {
                 />
               );
             })()}
+
+            {subPageView.type === 'folder-upload' && (
+              <BatchFolderUploadPage
+                exams={exams}
+                currentUser={currentUser}
+                centralDriveFolderUrl={centralDriveFolderUrl}
+                webhookUrl={settings.webhookUrl}
+                onBack={handleBackFromSubPage}
+                onBatchUploadSuccess={(updates) => {
+                  handleBatchUploadSuccess(updates);
+                }}
+              />
+            )}
 
             {subPageView.type === 'teacher-login' && (
               <TeacherLoginPage
@@ -928,6 +956,7 @@ export default function App() {
                   onUploadExamSuccess={handleUploadExamSuccess}
                   onBatchUploadSuccess={handleBatchUploadSuccess}
                   onViewExamDetails={(exam) => navigateToCourseDetail(exam)}
+                  onNavigateToFolderUpload={navigateToFolderUpload}
                 />
               ) : (
                 <div className="max-w-md mx-auto my-12 p-8 bg-white rounded-2xl border border-[#F8D7E3] text-center space-y-4 shadow-xs">

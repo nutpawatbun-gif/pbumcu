@@ -58,6 +58,7 @@ interface TeacherPortalProps {
   onUploadExamSuccess?: (examId: string, fileUrl: string, uploadedDate: string) => void;
   onBatchUploadSuccess?: (updates: { examId: string; fileUrl?: string; uploadedDate: string; fileName: string }[]) => void;
   onViewExamDetails?: (exam: ExamItem) => void;
+  onNavigateToFolderUpload?: () => void;
 }
 
 export const TeacherPortal: React.FC<TeacherPortalProps> = ({
@@ -80,7 +81,8 @@ export const TeacherPortal: React.FC<TeacherPortalProps> = ({
   onUpdateCentralDriveFolder,
   onToggleSubmissionStatus,
   onUploadExamSuccess,
-  onBatchUploadSuccess
+  onBatchUploadSuccess,
+  onNavigateToFolderUpload
 }) => {
   const isAdmin = currentUser?.role === 'admin';
   const [filterMyCoursesOnly, setFilterMyCoursesOnly] = useState(currentUser ? currentUser.role !== 'admin' : true);
@@ -273,17 +275,21 @@ export const TeacherPortal: React.FC<TeacherPortalProps> = ({
             </button>
           </div>
 
-          {isAdmin && (
-            <button
-              type="button"
-              onClick={() => setIsBatchUploadModalOpen(true)}
-              className="px-3.5 py-2 bg-[#FFF0F5] hover:bg-[#FCE7F3] text-[#701A4B] border border-[#F8D7E3] font-semibold text-xs rounded-xl shadow-2xs transition flex items-center gap-1.5 cursor-pointer"
-              title="อัปโหลดข้อสอบหลายไฟล์พร้อมกันและจับคู่รายวิชาอัตโนมัติ (Admin)"
-            >
-              <Files className="w-3.5 h-3.5 text-[#9D174D]" />
-              <span>⚡ อัปโหลดหลายไฟล์</span>
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={() => {
+              if (onNavigateToFolderUpload) {
+                onNavigateToFolderUpload();
+              } else {
+                setIsBatchUploadModalOpen(true);
+              }
+            }}
+            className="px-3.5 py-2 bg-gradient-to-r from-[#9D174D] to-[#701A4B] hover:opacity-95 text-white font-bold text-xs rounded-xl shadow-xs transition flex items-center gap-1.5 cursor-pointer"
+            title="อัปโหลดข้อสอบแบบเลือกโฟลเดอร์และจับคู่อัตโนมัติ"
+          >
+            <FolderUp className="w-3.5 h-3.5 text-rose-200" />
+            <span>📁 อัปโหลดโฟลเดอร์ข้อสอบ</span>
+          </button>
 
           <button
             onClick={onAddNewExam}
@@ -349,12 +355,18 @@ export const TeacherPortal: React.FC<TeacherPortalProps> = ({
             <>
               <button
                 type="button"
-                onClick={() => setIsBatchUploadModalOpen(true)}
-                className="px-3.5 py-2 bg-[#9D174D] hover:bg-[#831843] text-white font-semibold text-xs rounded-xl shadow-2xs transition flex items-center gap-1.5 cursor-pointer"
-                title="อัปโหลดข้อสอบหลายไฟล์พร้อมกันและจับคู่รายวิชาอัตโนมัติ (เฉพาะผู้ดูแลระบบ)"
+                onClick={() => {
+                  if (onNavigateToFolderUpload) {
+                    onNavigateToFolderUpload();
+                  } else {
+                    setIsBatchUploadModalOpen(true);
+                  }
+                }}
+                className="px-3.5 py-2 bg-[#9D174D] hover:bg-[#831843] text-white font-semibold text-xs rounded-xl shadow-xs transition flex items-center gap-1.5 cursor-pointer"
+                title="อัปโหลดข้อสอบแบบเลือกโฟลเดอร์และจับคู่อัตโนมัติ"
               >
-                <Files className="w-3.5 h-3.5 text-rose-200" />
-                <span>⚡ อัปโหลดหลายไฟล์ (Admin Batch)</span>
+                <FolderUp className="w-3.5 h-3.5 text-rose-200" />
+                <span>📁 อัปโหลดโฟลเดอร์ข้อสอบ</span>
               </button>
 
               <button

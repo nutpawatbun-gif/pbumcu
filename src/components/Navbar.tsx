@@ -19,7 +19,8 @@ import {
   X,
   ChevronRight,
   SlidersHorizontal,
-  LayoutDashboard
+  LayoutDashboard,
+  FolderUp
 } from 'lucide-react';
 import { TeacherUser } from '../types/exam';
 
@@ -37,6 +38,7 @@ interface NavbarProps {
   onExportExcel?: () => void;
   isWidescreen?: boolean;
   onToggleWidescreen?: () => void;
+  onNavigateToFolderUpload?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -52,7 +54,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   onPrint,
   onExportExcel,
   isWidescreen,
-  onToggleWidescreen
+  onToggleWidescreen,
+  onNavigateToFolderUpload
 }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
@@ -152,6 +155,17 @@ export const Navbar: React.FC<NavbarProps> = ({
               >
                 <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
                 <span>ส่งออก Excel</span>
+              </button>
+            )}
+
+            {onNavigateToFolderUpload && (
+              <button
+                onClick={onNavigateToFolderUpload}
+                title="อัปโหลดข้อสอบแบบเลือกโฟลเดอร์และจับคู่อัตโนมัติ"
+                className="flex items-center gap-1.5 text-xs font-bold text-white bg-gradient-to-r from-[#9D174D] to-[#701A4B] hover:opacity-95 px-3 py-1.5 rounded-xl shadow-xs transition cursor-pointer"
+              >
+                <FolderUp className="w-3.5 h-3.5 text-rose-200" />
+                <span className="hidden sm:inline">อัปโหลดโฟลเดอร์</span>
               </button>
             )}
 
@@ -475,6 +489,22 @@ export const Navbar: React.FC<NavbarProps> = ({
                 </div>
               )}
             </div>
+
+            {onNavigateToFolderUpload && (
+              <button
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  onNavigateToFolderUpload();
+                }}
+                className="w-full flex items-center justify-between p-3 rounded-2xl text-xs font-bold bg-gradient-to-r from-[#FFF0F5] to-[#FCE7F3] hover:opacity-95 text-[#701A4B] border border-[#F8D7E3] shadow-2xs transition"
+              >
+                <div className="flex items-center gap-2.5">
+                  <FolderUp className="w-4 h-4 text-[#9D174D]" />
+                  <span>📁 อัปโหลดข้อสอบแบบเลือกโฟลเดอร์</span>
+                </div>
+                <ChevronRight className="w-4 h-4 text-[#854D67]/50" />
+              </button>
+            )}
 
             {/* Category 1: ตารางและการสอบ */}
             <div className="space-y-1">
