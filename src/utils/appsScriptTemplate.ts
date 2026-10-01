@@ -157,17 +157,17 @@ function doPost(e) {
     }
 
     // กรณีที่ 3: อัปโหลดข้อสอบเข้า Google Drive (แยกโฟลเดอร์ตามรูปแบบ ข: ชั้นปี 1-4 บรรพชิต/คฤหัสถ์)
-    if (action === "upload_exam") {
+    if (action === "upload_exam" || action === "uploadExamFile") {
       const parentFolderId = postData.folderId || "1yc7VLWVCYtH8n1NqWymKmeu1kaNJRDBa";
       const yearLevel = (postData.yearLevel || "1").toString().trim();
       const studentStatus = (postData.studentStatus || postData.status || "บรรพชิต").toString().trim();
       const major = (postData.major || postData.faculty || "").trim();
-      const teacherName = (postData.teacherName || "อาจารย์ผู้สอน").trim();
+      const teacherName = (postData.teacherName || postData.lecturer || "อาจารย์ผู้สอน").trim();
       const courseCode = (postData.courseCode || "").trim();
       const courseName = (postData.courseName || "").trim();
-      const fileData = postData.fileData; // Base64
+      const fileData = postData.fileData || postData.fileContent; // Base64
       const originalFileName = postData.fileName || "exam.pdf";
-      const fileMime = postData.fileMime || "application/pdf";
+      const fileMime = postData.fileMime || postData.mimeType || "application/pdf";
 
       const parentFolder = DriveApp.getFolderById(parentFolderId);
 
@@ -201,6 +201,7 @@ function doPost(e) {
 
       return ContentService.createTextOutput(JSON.stringify({
         status: "success",
+        success: true,
         fileId: uploadedFile.getId(),
         fileName: newFileName,
         fileUrl: uploadedFile.getUrl(),
@@ -211,7 +212,8 @@ function doPost(e) {
     }
 
     return ContentService.createTextOutput(JSON.stringify({
-      status: "unknown_action"
+      status: "unknown_action",
+      receivedAction: action
     })).setMimeType(ContentService.MimeType.JSON);
 
   } catch (err) {

@@ -788,6 +788,13 @@ export default function App() {
                 currentUser={currentUser}
                 centralDriveFolderUrl={centralDriveFolderUrl}
                 webhookUrl={settings.webhookUrl}
+                onUpdateWebhookUrl={(url) => {
+                  const updated = { ...settings, webhookUrl: url };
+                  setSettings(updated);
+                  try {
+                    localStorage.setItem(STORAGE_KEY_SETTINGS, JSON.stringify(updated));
+                  } catch {}
+                }}
                 onBack={handleBackFromSubPage}
                 onBatchUploadSuccess={(updates) => {
                   handleBatchUploadSuccess(updates);
