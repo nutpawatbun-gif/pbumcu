@@ -1,0 +1,8 @@
+{
+  "name": "Remix ระบบตารางสอบออนไลน์และแจ้งเตือนการสอบ",
+  "description": "ระบบตารางสอบออนไลน์สำหรับนิสิตและอาจารย์ พร้อมระบบล็อกอินจัดการวิชาสอบ ระบบแจ้งเตือน และเชื่อมต่อ LINE Notify / Apps Script",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
