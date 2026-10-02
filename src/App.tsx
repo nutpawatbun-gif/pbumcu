@@ -36,9 +36,9 @@ import {
 import { exportExamsToExcel } from './utils/excelExport';
 import { isLecturerMatch } from './utils/teacherMatching';
 import { OfficialPrintSheet } from './components/OfficialPrintSheet';
-import { syncExamsWithGoogleDrive } from './utils/cloudSync';
+import { syncExamsWithGoogleDrive, extractDriveFolderId } from './utils/cloudSync';
 import { exportBackupJson, readBackupFile } from './utils/dataBackup';
-import { CheckCircle2, AlertCircle } from 'lucide-react';
+import { CheckCircle2, AlertCircle, Info } from 'lucide-react';
 
 const STORAGE_KEY_EXAMS = 'mcu_exam_portal_data_v2';
 const STORAGE_KEY_SAVED = 'mcu_exam_portal_saved_v2';
@@ -128,7 +128,7 @@ export default function App() {
   };
 
   const [isSyncingDrive, setIsSyncingDrive] = useState(false);
-  const [syncToast, setSyncToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const [syncToast, setSyncToast] = useState<{ type: 'success' | 'error' | 'info'; message: string } | null>(null);
 
   const handleToggleExamSubmission = (id: string) => {
     const targetExam = exams.find(e => e.id === id);
@@ -623,7 +623,9 @@ export default function App() {
 
     setIsSyncingDrive(true);
     try {
-      const res = await syncExamsWithGoogleDrive(targetWebhook, exams, centralDriveFolderUrl);
+      const cleanFolderId = extractDriveFolderId(centralDriveFolderUrl);
+      const res = await syncExamsWithGoogleDrive(targetWebhook, exams, cleanFolderId);
+      
       if (res.success) {
         if (res.syncedCount > 0) {
           setExams(res.updatedExams);
@@ -634,17 +636,32 @@ export default function App() {
         } else {
           if (!silent) {
             setSyncToast({
-              type: 'success',
+              type: 'info',
               message: res.message
             });
+            if (res.driveFilesCount === 0) {
+              setTimeout(() => {
+                alert(
+                  `ℹ️ รายงานผลการตรวจสอบ Google Drive (โฟลเดอร์ ID: ${cleanFolderId}):\n\n` +
+                  `ระบบเชื่อมต่อสำเร็จ แต่ไม่พบไฟล์ข้อสอบในโฟลเดอร์ Google Drive ดังกล่าว\n\n` +
+                  `💡 สิ่งที่ควรตรวจสอบ:\n` +
+                  `1. ได้นำไฟล์ข้อสอบไปใส่ในโฟลเดอร์ Google Drive รับข้อสอบกลางแล้วหรือยัง\n` +
+                  `2. หากเพิ่งติดตั้ง Google Apps Script ให้ไปที่แท็บ "Apps Script & Cloud" คัดลอกโค้ดใหม่ และกด Deploy (การทำให้ใช้งานได้ใหม่) อีกครั้ง เพื่อเปิดฟังก์ชันค้นหาไฟล์ใน Drive ครับ`
+                );
+              }, 200);
+            }
           }
         }
       } else {
         if (!silent) {
-          setSyncToast({
-            type: 'error',
-            message: res.message
-          });
+          if (res.isOldScriptVersion) {
+            alert(res.message);
+          } else {
+            setSyncToast({
+              type: 'error',
+              message: res.message
+            });
+          }
         }
       }
     } catch (err) {
@@ -656,7 +673,7 @@ export default function App() {
       }
     } finally {
       setIsSyncingDrive(false);
-      setTimeout(() => setSyncToast(null), 5000);
+      setTimeout(() => setSyncToast(null), 6000);
     }
   };
 
@@ -1193,13 +1210,17 @@ export default function App() {
       </div>
       {/* Toast Notification */}
       {syncToast && (
-        <div className={`fixed bottom-20 md:bottom-6 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl shadow-xl text-sm font-semibold flex items-center gap-2.5 animate-in fade-in slide-in-from-bottom-3 duration-200 border ${
+        <div className={`fixed bottom-20 md:bottom-6 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl shadow-xl text-sm font-semibold flex items-center gap-2.5 animate-in fade-in slide-in-from-bottom-3 duration-200 border max-w-lg text-center ${
           syncToast.type === 'success' 
             ? 'bg-slate-900/95 text-white border-emerald-500/40 shadow-emerald-950/20' 
+            : syncToast.type === 'info'
+            ? 'bg-slate-900/95 text-white border-blue-500/40 shadow-blue-950/20'
             : 'bg-rose-950/95 text-white border-rose-500/40 shadow-rose-950/20'
         }`}>
           {syncToast.type === 'success' ? (
             <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
+          ) : syncToast.type === 'info' ? (
+            <Info className="w-5 h-5 text-blue-400 shrink-0" />
           ) : (
             <AlertCircle className="w-5 h-5 text-rose-400 shrink-0" />
           )}

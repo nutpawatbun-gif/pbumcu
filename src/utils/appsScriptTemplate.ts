@@ -67,49 +67,56 @@ function initialSetupAndAuthorize() {
 }
 
 /**
- * Helper: สแกนไฟล์ข้อสอบทั้งหมดในโฟลเดอร์ Google Drive รับข้อสอบ
+ * Helper: สกัด Folder ID จาก URL หรือสตริง ID เพื่อความปลอดภัย
+ */
+function extractFolderId(input) {
+  if (!input) return "1yc7VLWVCYtH8n1NqWymKmeu1kaNJRDBa";
+  var str = input.toString().trim();
+  var match = str.match(/folders\/([a-zA-Z0-9_-]+)/) || str.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+  if (match && match[1]) {
+    return match[1];
+  }
+  return str;
+}
+
+/**
+ * Helper: สแกนไฟล์ข้อสอบทั้งหมดในโฟลเดอร์ Google Drive รับข้อสอบ (รวมโฟลเดอร์ย่อยทุกระดับ)
  */
 function scanGoogleDriveExamFiles(parentFolderId) {
-  const folderId = parentFolderId || "1yc7VLWVCYtH8n1NqWymKmeu1kaNJRDBa";
-  const filesList = [];
+  var folderId = extractFolderId(parentFolderId);
+  var filesList = [];
   try {
-    const parentFolder = DriveApp.getFolderById(folderId);
+    var parentFolder = DriveApp.getFolderById(folderId);
     
-    // สแกนโฟลเดอร์ย่อย (เช่น ชั้นปีที่ 1 (บรรพชิต), ชั้นปีที่ 1 (คฤหัสถ์))
-    const subfolders = parentFolder.getFolders();
-    while (subfolders.hasNext()) {
-      const sub = subfolders.next();
-      const files = sub.getFiles();
-      while (files.hasNext()) {
-        const file = files.next();
-        filesList.push({
-          id: file.getId(),
-          name: file.getName(),
-          url: file.getUrl(),
-          downloadUrl: file.getDownloadUrl(),
-          folderName: sub.getName(),
-          folderId: sub.getId(),
-          size: file.getSize(),
-          updated: file.getLastUpdated().toISOString()
-        });
+    function walkFolder(folder, path, depth) {
+      if (depth > 5) return;
+      try {
+        var files = folder.getFiles();
+        while (files.hasNext()) {
+          var file = files.next();
+          filesList.push({
+            id: file.getId(),
+            name: file.getName(),
+            url: file.getUrl(),
+            downloadUrl: file.getDownloadUrl(),
+            folderName: path || folder.getName(),
+            folderId: folder.getId(),
+            size: file.getSize(),
+            updated: file.getLastUpdated().toISOString()
+          });
+        }
+        var subfolders = folder.getFolders();
+        while (subfolders.hasNext()) {
+          var sub = subfolders.next();
+          var subPath = path ? (path + " > " + sub.getName()) : sub.getName();
+          walkFolder(sub, subPath, depth + 1);
+        }
+      } catch (err) {
+        Logger.log("Walk folder error: " + err.toString());
       }
     }
 
-    // สแกนโฟลเดอร์หลักด้วย
-    const rootFiles = parentFolder.getFiles();
-    while (rootFiles.hasNext()) {
-      const rFile = rootFiles.next();
-      filesList.push({
-        id: rFile.getId(),
-        name: rFile.getName(),
-        url: rFile.getUrl(),
-        downloadUrl: rFile.getDownloadUrl(),
-        folderName: parentFolder.getName(),
-        folderId: parentFolder.getId(),
-        size: rFile.getSize(),
-        updated: rFile.getLastUpdated().toISOString()
-      });
-    }
+    walkFolder(parentFolder, "", 0);
   } catch (err) {
     Logger.log("Drive scan error: " + err.toString());
   }
@@ -121,20 +128,21 @@ function scanGoogleDriveExamFiles(parentFolderId) {
  */
 function doGet(e) {
   try {
-    const folderId = (e && e.parameter && e.parameter.folderId) ? e.parameter.folderId : "1yc7VLWVCYtH8n1NqWymKmeu1kaNJRDBa";
-    const driveFiles = scanGoogleDriveExamFiles(folderId);
+    var rawFolderId = (e && e.parameter && e.parameter.folderId) ? e.parameter.folderId : "1yc7VLWVCYtH8n1NqWymKmeu1kaNJRDBa";
+    var folderId = extractFolderId(rawFolderId);
+    var driveFiles = scanGoogleDriveExamFiles(folderId);
 
     // ดึงข้อมูล Sheet (ถ้ามี)
-    let exams = [];
+    var exams = [];
     try {
-      const sheet = getOrCreateSheet();
-      const data = sheet.getDataRange().getValues();
+      var sheet = getOrCreateSheet();
+      var data = sheet.getDataRange().getValues();
       if (data.length > 1) {
-        const headers = data[0];
-        const rows = data.slice(1);
-        exams = rows.map((row, index) => {
-          const obj = { id: "exam-" + (index + 1) };
-          headers.forEach((header, colIdx) => {
+        var headers = data[0];
+        var rows = data.slice(1);
+        exams = rows.map(function(row, index) {
+          var obj = { id: "exam-" + (index + 1) };
+          headers.forEach(function(header, colIdx) {
             obj[header] = row[colIdx];
           });
           return obj;
@@ -148,6 +156,7 @@ function doGet(e) {
       status: "success",
       count: exams.length,
       data: exams,
+      folderIdScanned: folderId,
       driveFilesCount: driveFiles.length,
       driveFiles: driveFiles
     })).setMimeType(ContentService.MimeType.JSON);
@@ -169,11 +178,12 @@ function doPost(e) {
 
     // กรณีที่ 0: สแกนไฟล์ข้อสอบจาก Google Drive (สำหรับซิงค์สถานะข้ามเบราว์เซอร์)
     if (action === "get_drive_status" || action === "sync_from_drive") {
-      const parentFolderId = postData.folderId || "1yc7VLWVCYtH8n1NqWymKmeu1kaNJRDBa";
+      const parentFolderId = extractFolderId(postData.folderId || "1yc7VLWVCYtH8n1NqWymKmeu1kaNJRDBa");
       const driveFiles = scanGoogleDriveExamFiles(parentFolderId);
       return ContentService.createTextOutput(JSON.stringify({
         status: "success",
         action: action,
+        folderIdScanned: parentFolderId,
         driveFilesCount: driveFiles.length,
         driveFiles: driveFiles
       })).setMimeType(ContentService.MimeType.JSON);
@@ -232,7 +242,7 @@ function doPost(e) {
 
     // กรณีที่ 3: อัปโหลดข้อสอบเข้า Google Drive (แยกโฟลเดอร์ตามรูปแบบ ข: ชั้นปี 1-4 บรรพชิต/คฤหัสถ์)
     if (action === "upload_exam" || action === "uploadExamFile") {
-      const parentFolderId = postData.folderId || "1yc7VLWVCYtH8n1NqWymKmeu1kaNJRDBa";
+      const parentFolderId = extractFolderId(postData.folderId || "1yc7VLWVCYtH8n1NqWymKmeu1kaNJRDBa");
       const yearLevel = (postData.yearLevel || "1").toString().trim();
       const studentStatus = (postData.studentStatus || postData.status || "บรรพชิต").toString().trim();
       const major = (postData.major || postData.faculty || "").trim();

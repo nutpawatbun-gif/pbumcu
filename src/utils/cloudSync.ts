@@ -23,6 +23,15 @@ export interface DriveExamFile {
   updated?: string;
 }
 
+export interface FetchDriveResult {
+  success: boolean;
+  driveFiles: DriveExamFile[];
+  folderIdScanned: string;
+  isOldScriptVersion: boolean;
+  errorMessage?: string;
+  rawResponse?: any;
+}
+
 export interface CloudSyncResult {
   success: boolean;
   message: string;
@@ -37,6 +46,24 @@ export interface CloudSyncResult {
     fileUrl: string;
   }[];
   updatedExams: ExamItem[];
+  isOldScriptVersion?: boolean;
+  folderIdScanned?: string;
+  foundFileNames?: string[];
+}
+
+/**
+ * Helper: Extract Google Drive Folder ID from full URL, query string, or plain ID
+ */
+export function extractDriveFolderId(urlOrId: string = ''): string {
+  if (!urlOrId) return '1yc7VLWVCYtH8n1NqWymKmeu1kaNJRDBa';
+  const str = urlOrId.trim();
+  const folderMatch = str.match(/folders\/([a-zA-Z0-9_-]+)/);
+  if (folderMatch && folderMatch[1]) return folderMatch[1];
+  const queryMatch = str.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+  if (queryMatch && queryMatch[1]) return queryMatch[1];
+  // If it's a bare alphanumeric ID (can contain _ and -)
+  if (/^[a-zA-Z0-9_-]{15,}$/.test(str)) return str;
+  return str;
 }
 
 /**
@@ -44,27 +71,40 @@ export interface CloudSyncResult {
  */
 export async function fetchGoogleDriveExamStatus(
   webhookUrl: string,
-  folderId: string = '1yc7VLWVCYtH8n1NqWymKmeu1kaNJRDBa'
-): Promise<DriveExamFile[]> {
+  folderIdOrUrl: string = '1yc7VLWVCYtH8n1NqWymKmeu1kaNJRDBa'
+): Promise<FetchDriveResult> {
   const url = webhookUrl.trim();
   if (!url) {
     throw new Error('กรุณาระบุ Google Apps Script Webhook URL');
   }
 
+  const cleanFolderId = extractDriveFolderId(folderIdOrUrl);
+  let isOldScript = false;
+  let lastError: string | undefined = undefined;
+
   // 1. Try GET request with folderId parameter first
   try {
-    const getUrl = `${url}${url.includes('?') ? '&' : '?'}folderId=${encodeURIComponent(folderId)}`;
+    const getUrl = `${url}${url.includes('?') ? '&' : '?'}folderId=${encodeURIComponent(cleanFolderId)}`;
     const res = await fetch(getUrl, {
       method: 'GET'
     });
     if (res.ok) {
       const data = await res.json();
       if (data && Array.isArray(data.driveFiles)) {
-        return data.driveFiles;
+        return {
+          success: true,
+          driveFiles: data.driveFiles,
+          folderIdScanned: cleanFolderId,
+          isOldScriptVersion: false,
+          rawResponse: data
+        };
+      } else if (data && (data.status === 'success' || data.count !== undefined)) {
+        // Old Apps Script version (only returns exams/count, no driveFiles field)
+        isOldScript = true;
       }
     }
-  } catch {
-    // If GET fails (e.g. CORS or parameter format), fallback to POST
+  } catch (e) {
+    lastError = (e as Error).message;
   }
 
   // 2. Try POST request with action: 'get_drive_status'
@@ -74,20 +114,34 @@ export async function fetchGoogleDriveExamStatus(
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify({
         action: 'get_drive_status',
-        folderId: folderId
+        folderId: cleanFolderId
       })
     });
     if (res.ok) {
       const data = await res.json();
       if (data && Array.isArray(data.driveFiles)) {
-        return data.driveFiles;
+        return {
+          success: true,
+          driveFiles: data.driveFiles,
+          folderIdScanned: cleanFolderId,
+          isOldScriptVersion: false,
+          rawResponse: data
+        };
+      } else if (data && (data.status === 'unknown_action' || data.status === 'error' || data.receivedAction)) {
+        isOldScript = true;
       }
     }
   } catch (err) {
-    throw new Error(`ไม่สามารถเชื่อมต่อ Google Drive Webhook ได้: ${(err as Error).message}`);
+    lastError = (err as Error).message;
   }
 
-  return [];
+  return {
+    success: !isOldScript && !lastError,
+    driveFiles: [],
+    folderIdScanned: cleanFolderId,
+    isOldScriptVersion: isOldScript,
+    errorMessage: lastError
+  };
 }
 
 /**
@@ -209,31 +263,75 @@ export function matchDriveFilesToExams(
 export async function syncExamsWithGoogleDrive(
   webhookUrl: string,
   currentExams: ExamItem[],
-  folderId: string = '1yc7VLWVCYtH8n1NqWymKmeu1kaNJRDBa'
+  folderIdOrUrl: string = '1yc7VLWVCYtH8n1NqWymKmeu1kaNJRDBa'
 ): Promise<CloudSyncResult> {
   try {
-    const driveFiles = await fetchGoogleDriveExamStatus(webhookUrl, folderId);
+    const fetchRes = await fetchGoogleDriveExamStatus(webhookUrl, folderIdOrUrl);
+
+    if (fetchRes.isOldScriptVersion) {
+      return {
+        success: false,
+        isOldScriptVersion: true,
+        message: '⚠️ Google Apps Script ของท่านยังเป็นเวอร์ชันเดิม (ยังไม่มีระบบค้นหาไฟล์ใน Google Drive)\n\nกรุณาไปที่แท็บ "Apps Script & Cloud" เพื่อคัดลอกโค้ดใหม่ แล้วกด Deploy ใหม่อีกครั้งใน Google Apps Script ครับ',
+        driveFilesCount: 0,
+        syncedCount: 0,
+        matchedDetails: [],
+        updatedExams: currentExams,
+        folderIdScanned: fetchRes.folderIdScanned
+      };
+    }
+
+    if (!fetchRes.success && fetchRes.errorMessage) {
+      return {
+        success: false,
+        message: `เชื่อมต่อ Webhook ไม่สำเร็จ: ${fetchRes.errorMessage}`,
+        driveFilesCount: 0,
+        syncedCount: 0,
+        matchedDetails: [],
+        updatedExams: currentExams,
+        folderIdScanned: fetchRes.folderIdScanned
+      };
+    }
+
+    const driveFiles = fetchRes.driveFiles;
     
     if (driveFiles.length === 0) {
       return {
         success: true,
-        message: 'เชื่อมต่อ Google Drive สำเร็จ แต่ยังไม่พบไฟล์ข้อสอบในโฟลเดอร์',
+        message: `เชื่อมต่อ Google Drive สำเร็จ แต่ไม่พบไฟล์ในโฟลเดอร์ (ID: ${fetchRes.folderIdScanned}) กรุณาตรวจสอบว่ามีไฟล์อยู่ในโฟลเดอร์นี้หรือยัง`,
         driveFilesCount: 0,
         syncedCount: 0,
         matchedDetails: [],
-        updatedExams: currentExams
+        updatedExams: currentExams,
+        folderIdScanned: fetchRes.folderIdScanned
       };
     }
 
     const { updatedExams, matchedDetails } = matchDriveFilesToExams(driveFiles, currentExams);
 
+    if (matchedDetails.length === 0) {
+      const sampleNames = driveFiles.slice(0, 3).map(f => f.name).join(', ');
+      return {
+        success: true,
+        message: `พบ ${driveFiles.length} ไฟล์ใน Google Drive (เช่น ${sampleNames}) แต่ชื่อไฟล์ไม่ตรงกับรหัสวิชาหรือชั้นปีในระบบ`,
+        driveFilesCount: driveFiles.length,
+        syncedCount: 0,
+        matchedDetails: [],
+        updatedExams: currentExams,
+        folderIdScanned: fetchRes.folderIdScanned,
+        foundFileNames: driveFiles.map(f => f.name)
+      };
+    }
+
     return {
       success: true,
-      message: `ซิงค์สถานะจาก Google Drive สำเร็จ! พบไฟล์ทั้งหมด ${driveFiles.length} ไฟล์ จับคู่รายวิชาพร้อมสอบได้ ${matchedDetails.length} วิชา`,
+      message: `🎉 ซิงค์สถานะจาก Google Drive สำเร็จ! พบไฟล์ทั้งหมด ${driveFiles.length} ไฟล์ จับคู่รายวิชาพร้อมสอบได้ ${matchedDetails.length} วิชา`,
       driveFilesCount: driveFiles.length,
       syncedCount: matchedDetails.length,
       matchedDetails,
-      updatedExams
+      updatedExams,
+      folderIdScanned: fetchRes.folderIdScanned,
+      foundFileNames: driveFiles.map(f => f.name)
     };
   } catch (err) {
     return {
