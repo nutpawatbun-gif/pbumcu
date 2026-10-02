@@ -67,14 +67,18 @@ function initialSetupAndAuthorize() {
 }
 
 /**
- * Helper: สกัด Folder ID จาก URL หรือสตริง ID เพื่อความปลอดภัย
+ * Helper: สกัด Folder ID จาก URL หรือสตริง ID เพื่อความปลอดภัย (ไม่ใช้ RegExp ป้องกัน SyntaxError)
  */
 function extractFolderId(input) {
   if (!input) return "1yc7VLWVCYtH8n1NqWymKmeu1kaNJRDBa";
   var str = input.toString().trim();
-  var match = str.match(/folders\/([a-zA-Z0-9_-]+)/) || str.match(/[?&]id=([a-zA-Z0-9_-]+)/);
-  if (match && match[1]) {
-    return match[1];
+  if (str.indexOf("folders/") !== -1) {
+    var part = str.split("folders/")[1];
+    return part.split("?")[0].split("&")[0].split("/")[0].trim();
+  }
+  if (str.indexOf("id=") !== -1) {
+    var idPart = str.split("id=")[1];
+    return idPart.split("&")[0].split("#")[0].trim();
   }
   return str;
 }
