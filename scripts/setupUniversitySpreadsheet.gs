@@ -1,8 +1,4 @@
 /**
- * Ready-to-deploy Google Apps Script (.gs) template
- * Sets up 6 Sheets tables and Private Drive structure for MCU Phokhun Pha Mueang Monastic College
- */
-export const APPS_SCRIPT_SOURCE_CODE = `/**
  * ==============================================================================================
  * มหาวิทยาลัยมหาจุฬาลงกรณราชวิทยาลัย (MCU) · วิทยาลัยสงฆ์พ่อขุนผาเมือง เพชรบูรณ์
  * สคริปต์ติดตั้งระบบฐานข้อมูล Google Sheets และโครงสร้างโฟลเดอร์ Google Drive แบบปลอดภัย
@@ -14,12 +10,17 @@ export const APPS_SCRIPT_SOURCE_CODE = `/**
  * ==============================================================================================
  */
 
+// ⚙️ การตั้งค่าหลัก (ตั้งค่า ID โฟลเดอร์ Google Drive กลางที่ต้องการจัดเก็บข้อสอบ)
 const UNIVERSITY_CONFIG = {
   INSTITUTION_NAME: "วิทยาลัยสงฆ์พ่อขุนผาเมือง เพชรบูรณ์",
   ACADEMIC_YEAR: "1/2569",
+  // ระบุ Folder ID ปลายทางใน Google Drive (หากเว้นว่าง ระบบจะสร้างโฟลเดอร์ใหม่ให้ใน Root Drive)
   CENTRAL_DRIVE_FOLDER_ID: ""
 };
 
+/**
+ * 1. ฟังก์ชันสร้าง 6 แผ่นงานฐานข้อมูล (Sheets Tables) พร้อม Header และตัวอย่างข้อมูลเริ่มต้น
+ */
 function setupUniversitySpreadsheet() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   
@@ -125,28 +126,36 @@ function setupUniversitySpreadsheet() {
       Logger.log("ℹ️ พบชีตเดิม: " + tableDef.name);
     }
 
+    // ตั้งค่าสีแท็บ
     try {
       sheet.setTabColor(tableDef.color);
     } catch(e) {}
 
+    // ถ้ายังไม่มีข้อมูล หรือไม่มี Header แถวแรก
     if (sheet.getLastRow() === 0) {
+      // เขียน Header
       sheet.getRange(1, 1, 1, tableDef.headers.length).setValues([tableDef.headers]);
+      
+      // จัดรูปแบบ Header: ตัวหนา พื้นหลังสีเข้ม ตัวหนังสือขาว ตรึงแถวแรก
       const headerRange = sheet.getRange(1, 1, 1, tableDef.headers.length);
       headerRange.setFontWeight("bold");
       headerRange.setBackground(tableDef.color);
       headerRange.setFontColor("#FFFFFF");
       sheet.setFrozenRows(1);
 
+      // ใส่ข้อมูลตัวอย่าง (ถ้ามี)
       if (tableDef.sampleRows.length > 0) {
         sheet.getRange(2, 1, tableDef.sampleRows.length, tableDef.headers.length).setValues(tableDef.sampleRows);
       }
 
+      // ปรับขนาดคอลัมน์ให้อ่านง่าย
       for (let col = 1; col <= tableDef.headers.length; col++) {
         sheet.autoResizeColumn(col);
       }
     }
   });
 
+  // ลบ Sheet1 เริ่มต้นออก (ถ้ามี)
   const defaultSheet = ss.getSheetByName("Sheet1") || ss.getSheetByName("แผ่นงาน1");
   if (defaultSheet && ss.getSheets().length > 1) {
     try {
@@ -157,11 +166,15 @@ function setupUniversitySpreadsheet() {
   Logger.log("🎉 ติดตั้งฐานข้อมูล 6 แผ่นงานสำเร็จเรียบร้อย!");
 }
 
+/**
+ * 2. ฟังก์ชันสร้างโครงสร้างโฟลเดอร์ Google Drive แบบ Private
+ */
 function setupDriveFolderStructure() {
   let rootFolder;
   if (UNIVERSITY_CONFIG.CENTRAL_DRIVE_FOLDER_ID) {
     rootFolder = DriveApp.getFolderById(UNIVERSITY_CONFIG.CENTRAL_DRIVE_FOLDER_ID);
   } else {
+    // ตรวจสอบว่ามีโฟลเดอร์หลักแล้วหรือยัง
     const existing = DriveApp.getFoldersByName("MCU_Exam_Repository_Private");
     if (existing.hasNext()) {
       rootFolder = existing.next();
@@ -172,11 +185,12 @@ function setupDriveFolderStructure() {
 
   Logger.log("📁 โฟลเดอร์หลัก: " + rootFolder.getName() + " (ID: " + rootFolder.getId() + ")");
 
+  // ตั้งค่าความปลอดภัย: ห้ามแชร์เป็นสาธารณะ (Private strictly)
   try {
     rootFolder.setSharing(DriveApp.Access.PRIVATE, DriveApp.Permission.NONE);
-    Logger.log("🔒 ตั้งค่าสิทธิ์โฟลเดอร์เป็นแบบส่วนตัว (Private Only)");
+    Logger.log("🔒 ตั้งค่าสิทธิ์โฟลเดอร์เป็นแบบส่วนตัว (Private Only - Zero Anyone With Link)");
   } catch(e) {
-    Logger.log("ℹ️ สิทธิ์ถูกควบคุมโดยผู้ดูแลระบบ Workspace");
+    Logger.log("ℹ️ ไม่สามารถเปลี่ยนสิทธิ์ผ่าน DriveApp (สิทธิ์ถูกควบคุมโดยผู้ดูแลระบบ Workspace): " + e.message);
   }
 
   const subFolders = [
@@ -203,6 +217,9 @@ function setupDriveFolderStructure() {
   };
 }
 
+/**
+ * 3. Webhook HTTP POST Endpoint สำหรับ Server Backend ซิงค์ข้อมูล
+ */
 function doPost(e) {
   try {
     if (!e || !e.postData || !e.postData.contents) {
@@ -226,6 +243,7 @@ function doPost(e) {
 
       for (let i = 1; i < data.length; i++) {
         if (data[i][0] === courseId) {
+          // อัปเดต submissionStatus, currentVersion, latestFileName, submittedAt
           sheet.getRange(i + 1, 12).setValue(payload.submissionStatus || "submitted");
           sheet.getRange(i + 1, 13).setValue(payload.currentVersion || 1);
           sheet.getRange(i + 1, 14).setValue(payload.latestFileName || "");
@@ -236,6 +254,7 @@ function doPost(e) {
         }
       }
 
+      // บันทึกลง AuditLogs
       const auditSheet = ss.getSheetByName("AuditLogs");
       if (auditSheet) {
         auditSheet.appendRow([
@@ -271,6 +290,9 @@ function doPost(e) {
   }
 }
 
+/**
+ * 4. Webhook HTTP GET Endpoint ตรวจสอบสถานะการเชื่อมต่อ
+ */
 function doGet(e) {
   return ContentService.createTextOutput(JSON.stringify({
     status: "ok",
@@ -279,4 +301,3 @@ function doGet(e) {
     timestamp: new Date().toISOString()
   })).setMimeType(ContentService.MimeType.JSON);
 }
-`;

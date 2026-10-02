@@ -4,836 +4,222 @@
  */
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { Navbar } from './components/Navbar';
+import { Navbar, AppTab } from './components/Navbar';
 import { OfficialTableView } from './components/OfficialTableView';
-import { CalendarView } from './components/CalendarView';
-import { Dashboard } from './components/Dashboard';
-import { MyScheduleView } from './components/MyScheduleView';
 import { TeacherPortal } from './components/TeacherPortal';
-import { AlertCenter } from './components/AlertCenter';
-import { AppsScriptView } from './components/AppsScriptView';
 import { CourseDetailPage } from './views/CourseDetailPage';
-import { PendingExamsPage } from './views/PendingExamsPage';
-import { ExamUploadDrivePage } from './views/ExamUploadDrivePage';
 import { TeacherLoginPage } from './views/TeacherLoginPage';
 import { ExamEditPage } from './views/ExamEditPage';
 import { PrintSetupPage } from './views/PrintSetupPage';
 import { BatchFolderUploadPage } from './views/BatchFolderUploadPage';
+import { StaffExamVerificationPage } from './views/StaffExamVerificationPage';
+import { AdminAccountManagementPage } from './views/AdminAccountManagementPage';
 import { RAW_EXAMS_DATA } from './data/initialExams';
-import { ExamItem, TeacherUser, NotificationSetting } from './types/exam';
-import { 
-  formatLineNotifyMessage, 
-  sendLineNotifyNotification, 
-  sendBrowserNotification
-} from './utils/notifications';
-import { 
-  Plus, 
-  Printer, 
-  FileSpreadsheet,
-  Download,
-  Lock
-} from 'lucide-react';
+import { ExamItem, TeacherUser } from './types/exam';
 import { exportExamsToExcel } from './utils/excelExport';
-import { isLecturerMatch } from './utils/teacherMatching';
+import { apiClient, ApiUser, ApiCourse } from './utils/apiClient';
 import { OfficialPrintSheet } from './components/OfficialPrintSheet';
-import { syncExamsWithGoogleDrive, extractDriveFolderId } from './utils/cloudSync';
-import { exportBackupJson, readBackupFile } from './utils/dataBackup';
-import { CheckCircle2, AlertCircle, Info } from 'lucide-react';
+import { GraduationCap, ShieldCheck, RefreshCw } from 'lucide-react';
 
-const STORAGE_KEY_EXAMS = 'mcu_exam_portal_data_v2';
-const STORAGE_KEY_SAVED = 'mcu_exam_portal_saved_v2';
-const STORAGE_KEY_SETTINGS = 'mcu_exam_portal_settings_v1';
-const STORAGE_KEY_USER = 'mcu_exam_portal_user_v1';
+function mapApiCourseToExam(c: ApiCourse, index: number): ExamItem {
+  const parts = (c.examTimeThai || '').split('-');
+  const startTime = parts[0]?.trim() || '09:00';
+  const endTime = parts[1]?.replace('น.', '').trim() || '11:30';
+
+  return {
+    id: c.courseId,
+    orderNo: index + 1,
+    yearLevel: c.yearLevel,
+    faculty: c.faculty || 'วิทยาลัยสงฆ์พ่อขุนผาเมือง',
+    major: c.major || '',
+    examDateThai: c.examDateThai || '',
+    examDateISO: c.examDateISO || '',
+    examTimeThai: c.examTimeThai || '',
+    startTime,
+    endTime,
+    courseCode: c.courseCode,
+    courseName: c.courseName,
+    lecturer: (c as any).lecturer || c.assignedLecturerIds?.join(', ') || 'อาจารย์ผู้สอน',
+    notes: '',
+    status: c.studentStatus || 'บรรพชิต',
+    room: c.room || 'ห้องประชุมชั้น 1',
+    examSubmissionStatus: (c.submissionStatus === 'submitted' || c.submissionStatus === 'accepted') ? 'submitted' : 'pending',
+    examSubmissionDate: c.submittedAt,
+    examFileName: c.latestFileName,
+    lastUpdated: c.verifiedAt || c.submittedAt
+  };
+}
 
 export default function App() {
-  // Navigation
-  const [currentTab, setCurrentTab] = useState<'dashboard' | 'schedule' | 'my-schedule' | 'calendar' | 'teacher' | 'alerts' | 'cloud'>('dashboard');
+  const [currentUser, setCurrentUser] = useState<ApiUser | null>(null);
+  const [isAuthChecking, setIsAuthChecking] = useState(true);
+  const [currentTab, setCurrentTab] = useState<AppTab>('teacher');
+  const [exams, setExams] = useState<ExamItem[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isWidescreen, setIsWidescreen] = useState(false);
 
-  // Exams State (initialized completely clean like fresh install)
-  const [exams, setExams] = useState<ExamItem[]>(() => {
+  // Subpage views: course-detail, edit-exam, print-setup
+  const [subPageView, setSubPageView] = useState<
+    | { type: 'course-detail'; examId: string }
+    | { type: 'edit-exam'; examId: string }
+    | { type: 'print-setup'; scope?: 'all' | 'teacher' | 'saved' }
+    | null
+  >(null);
+
+  // Load courses from server
+  const loadCourses = useCallback(async () => {
     try {
-      // Clear legacy storage from previous test sessions
-      localStorage.removeItem('mcu_exam_portal_data_v1');
-      localStorage.removeItem('mcu_exam_portal_saved_v1');
-
-      const saved = localStorage.getItem(STORAGE_KEY_EXAMS);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed.map(item => ({
-            ...item,
-            room: 'ห้องประชุมชั้น 1'
-          }));
-        }
+      const serverCourses = await apiClient.getCourses();
+      if (serverCourses && serverCourses.length > 0) {
+        setExams(serverCourses.map((c, idx) => mapApiCourseToExam(c, idx)));
+        return;
       }
     } catch {
-      // ignore
+      // Fallback in dev if server has no seed yet
     }
-    // Return clean slate: all 91 courses with pending status
-    return RAW_EXAMS_DATA.map(item => ({
+    // Fallback to RAW_EXAMS_DATA
+    setExams(RAW_EXAMS_DATA.map(item => ({
       ...item,
-      room: 'ห้องประชุมชั้น 1',
-      examSubmissionStatus: undefined,
-      examSubmissionDate: undefined,
-      examLink: undefined,
-      examFileName: undefined
-    }));
-  });
-
-  // Saved Courses (Bookmarked by student)
-  const [savedExamIds, setSavedExamIds] = useState<string[]>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY_SAVED);
-      if (saved) return JSON.parse(saved);
-    } catch {
-      // ignore
-    }
-    // Default bookmark Year 1 monks as sample
-    return ['exam-1', 'exam-2', 'exam-4', 'exam-6'];
-  });
-
-  // Notification settings
-  const [settings, setSettings] = useState<NotificationSetting>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY_SETTINGS);
-      if (saved) return JSON.parse(saved);
-    } catch {
-      // ignore
-    }
-    return {
-      enableBrowserAlerts: false,
-      alertBeforeMinutes: 60,
-      soundEnabled: true,
-      lineNotifyToken: '',
-      webhookUrl: ''
-    };
-  });
-
-  // Central Google Drive Folder for Exam Paper Submission (รูปแบบที่ 1)
-  const DEFAULT_MCU_DRIVE_FOLDER = 'https://drive.google.com/drive/folders/1yc7VLWVCYtH8n1NqWymKmeu1kaNJRDBa?usp=sharing';
-
-  const [centralDriveFolderUrl, setCentralDriveFolderUrl] = useState<string>(() => {
-    try {
-      const saved = localStorage.getItem('mcu_exam_portal_drive_folder');
-      if (saved && saved !== 'https://drive.google.com/drive/folders/') return saved;
-    } catch {}
-    return DEFAULT_MCU_DRIVE_FOLDER;
-  });
-
-  const handleUpdateCentralDriveFolder = (url: string) => {
-    setCentralDriveFolderUrl(url);
-    try {
-      localStorage.setItem('mcu_exam_portal_drive_folder', url);
-    } catch {}
-  };
-
-  const [isSyncingDrive, setIsSyncingDrive] = useState(false);
-  const [syncToast, setSyncToast] = useState<{ type: 'success' | 'error' | 'info'; message: string } | null>(null);
-
-  const handleToggleExamSubmission = (id: string) => {
-    const targetExam = exams.find(e => e.id === id);
-    if (!targetExam) return;
-
-    // หากส่งข้อสอบแล้ว ตั้งเงื่อนไขห้ามสลับสถานะหรืออัปโหลดซ้ำ (ยกเว้น Admin)
-    if (targetExam.examSubmissionStatus === 'submitted' && currentUser?.role !== 'admin') {
-      alert('⚠️ รายวิชานี้ส่งข้อสอบเรียบร้อยแล้ว (สถานะ: พร้อมสอบ ✔)\n\nระบบตั้งเงื่อนไขห้ามอัปโหลดหรือแก้ไขซ้ำ เพื่อป้องกันการส่งข้อสอบซ้ำซ้อน\n(หากมีความจำเป็นต้องแก้ไขไฟล์ กรุณาติดต่อผู้ดูแลระบบ Admin)');
-      return;
-    }
-
-    setExams(prev => prev.map(exam => {
-      if (exam.id !== id) return exam;
-      const isSubmitted = exam.examSubmissionStatus === 'submitted';
-      const now = new Date();
-      const thaiDate = now.toLocaleDateString('th-TH', { 
-        day: 'numeric', 
-        month: 'short', 
-        year: '2-digit' 
-      });
-      const thaiTime = now.toLocaleTimeString('th-TH', { 
-        hour: '2-digit', 
-        minute: '2-digit' 
-      });
-      return {
-        ...exam,
-        examSubmissionStatus: isSubmitted ? 'pending' : 'submitted',
-        examSubmissionDate: isSubmitted ? undefined : `${thaiDate} ${thaiTime} น.`
-      };
-    }));
-  };
-
-  const handleUploadExamSuccess = (examId: string, fileUrl: string, uploadedDate: string) => {
-    const targetExam = exams.find(e => e.id === examId);
-    if (targetExam && targetExam.examSubmissionStatus === 'submitted' && currentUser?.role !== 'admin') {
-      alert('⚠️ รายวิชานี้ส่งข้อสอบแล้ว ไม่อนุญาตให้อัปโหลดซ้ำ');
-      return;
-    }
-
-    setExams(prev => prev.map(exam => {
-      if (exam.id !== examId) return exam;
-      return {
-        ...exam,
-        examSubmissionStatus: 'submitted',
-        examSubmissionDate: uploadedDate,
-        examLink: fileUrl || exam.examLink
-      };
-    }));
-  };
-
-  const handleBatchUploadSuccess = (updates: { examId: string; fileUrl?: string; uploadedDate: string; fileName: string }[]) => {
-    setExams(prev => prev.map(exam => {
-      const update = updates.find(u => u.examId === exam.id);
-      if (!update) return exam;
-      return {
-        ...exam,
-        examSubmissionStatus: 'submitted',
-        examSubmissionDate: update.uploadedDate,
-        examLink: update.fileUrl || exam.examLink,
-        examFileName: update.fileName || exam.examFileName
-      };
-    }));
-  };
-
-  // Current Logged In Teacher
-  const [currentUser, setCurrentUser] = useState<TeacherUser | null>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY_USER);
-      if (saved) return JSON.parse(saved);
-    } catch {
-      // ignore
-    }
-    return null;
-  });
-
-  // SubPageView state (Replaces all popup modals with full-page views)
-  type SubPageView = 
-    | null
-    | { type: 'course-detail'; examId: string; fromTab: string }
-    | { type: 'pending-exams'; mode: 'pending' | 'submitted' | 'all'; fromTab: string }
-    | { type: 'upload-drive'; examId: string; fromTab: string }
-    | { type: 'folder-upload'; fromTab: string }
-    | { type: 'teacher-login'; fromTab: string }
-    | { type: 'edit-exam'; examId: string; fromTab: string }
-    | { type: 'print-setup'; scope: 'all' | 'teacher' | 'saved'; fromTab: string };
-
-  const [subPageView, setSubPageView] = useState<SubPageView>(null);
-  const [printTargetExams, setPrintTargetExams] = useState<ExamItem[]>([]);
-  const [printSubtitle, setPrintSubtitle] = useState<string>('ตารางสอบไล่ ประจำภาคการศึกษาที่ 1 ปีการศึกษา 2569');
-  const [printSignatoryTeacher, setPrintSignatoryTeacher] = useState<string | undefined>(undefined);
-
-  const handleSyncPrintExams = useCallback((targetList: ExamItem[], sub: string, teacher?: string) => {
-    setPrintTargetExams(targetList);
-    setPrintSubtitle(sub);
-    setPrintSignatoryTeacher(teacher);
+      room: 'ห้องประชุมชั้น 1'
+    })));
   }, []);
 
-  const navigateToCourseDetail = (exam: ExamItem) => {
-    setSubPageView({ type: 'course-detail', examId: exam.id, fromTab: currentTab });
-    window.location.hash = `course-${exam.id}`;
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const navigateToPendingExams = (mode: 'pending' | 'submitted' | 'all' = 'pending') => {
-    setSubPageView({ type: 'pending-exams', mode, fromTab: currentTab });
-    window.location.hash = `pending-${mode}`;
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const navigateToUploadDrive = (exam: ExamItem) => {
-    setSubPageView({ type: 'upload-drive', examId: exam.id, fromTab: currentTab });
-    window.location.hash = `upload-${exam.id}`;
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const navigateToFolderUpload = () => {
-    if (!currentUser) {
-      navigateToLogin();
-      return;
+  // Initial authentication check on application load
+  useEffect(() => {
+    let isMounted = true;
+    async function checkAuth() {
+      try {
+        const user = await apiClient.getCurrentUser();
+        if (!isMounted) return;
+        if (user) {
+          setCurrentUser(user);
+          if (user.role === 'teacher') setCurrentTab('teacher');
+          else if (user.role === 'staff') setCurrentTab('staff');
+          else if (user.role === 'admin') setCurrentTab('admin');
+          await loadCourses();
+        }
+      } catch {
+        if (isMounted) setCurrentUser(null);
+      } finally {
+        if (isMounted) setIsAuthChecking(false);
+      }
     }
-    setSubPageView({ type: 'folder-upload', fromTab: currentTab });
-    window.location.hash = 'folder-upload';
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    checkAuth();
+    return () => { isMounted = false; };
+  }, [loadCourses]);
+
+  const handleLogout = async () => {
+    try {
+      await apiClient.logout();
+    } finally {
+      setCurrentUser(null);
+      setExams([]);
+      setSubPageView(null);
+    }
   };
 
-  const navigateToLogin = () => {
-    setSubPageView({ type: 'teacher-login', fromTab: currentTab });
-    window.location.hash = 'login';
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+  const handleLoginSuccess = async (user: ApiUser) => {
+    setCurrentUser(user);
+    if (user.role === 'teacher') setCurrentTab('teacher');
+    else if (user.role === 'staff') setCurrentTab('staff');
+    else if (user.role === 'admin') setCurrentTab('admin');
+    await loadCourses();
   };
 
-  const navigateToEditExam = (exam: ExamItem) => {
-    setSubPageView({ type: 'edit-exam', examId: exam.id, fromTab: currentTab });
-    window.location.hash = `edit-${exam.id}`;
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+  const teacherUserView: TeacherUser | null = useMemo(() => {
+    if (!currentUser) return null;
+    return {
+      id: currentUser.accountId,
+      name: currentUser.fullName,
+      code: '',
+      role: currentUser.role,
+      googleEmail: currentUser.googleEmail,
+      status: currentUser.status,
+      assignedScope: currentUser.assignedScope,
+      canReadExamContent: currentUser.canReadExamContent
+    };
+  }, [currentUser]);
+
+  // Filter exams by search query
+  const filteredExams = useMemo(() => {
+    if (!searchQuery.trim()) return exams;
+    const q = searchQuery.toLowerCase().trim();
+    return exams.filter(e => 
+      e.courseCode.toLowerCase().includes(q) ||
+      e.courseName.toLowerCase().includes(q) ||
+      e.lecturer.toLowerCase().includes(q) ||
+      e.examDateThai.toLowerCase().includes(q) ||
+      (e.faculty && e.faculty.toLowerCase().includes(q))
+    );
+  }, [exams, searchQuery]);
+
+  // Actions
+  const handleExportExcel = () => {
+    exportExamsToExcel(exams, 'MCU_Exam_Schedule_Official');
   };
 
-  const navigateToPrintSetup = (scope: 'all' | 'teacher' | 'saved' = 'all') => {
-    setSubPageView({ type: 'print-setup', scope, fromTab: currentTab });
-    window.location.hash = `print-${scope}`;
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+  const handlePrint = () => {
+    window.print();
   };
 
   const handleBackFromSubPage = () => {
-    if (subPageView) {
-      const returnTab = subPageView.fromTab;
-      setSubPageView(null);
-      if (returnTab) {
-        setCurrentTab(returnTab as any);
-        window.location.hash = returnTab;
-      } else {
-        window.location.hash = '';
-      }
-    } else {
-      setSubPageView(null);
-      window.location.hash = '';
-    }
+    setSubPageView(null);
   };
 
-  // Listen to browser Back/Forward (Hash Routing)
-  useEffect(() => {
-    const handleHashChange = () => {
-      const hash = window.location.hash.replace(/^#/, '');
-      if (!hash) {
-        setSubPageView(null);
-        return;
-      }
-      if (hash.startsWith('course-')) {
-        const id = hash.replace('course-', '');
-        setSubPageView({ type: 'course-detail', examId: id, fromTab: currentTab });
-      } else if (hash.startsWith('pending-')) {
-        const mode = hash.replace('pending-', '') as 'pending' | 'submitted' | 'all';
-        setSubPageView({ type: 'pending-exams', mode: ['pending', 'submitted', 'all'].includes(mode) ? mode : 'pending', fromTab: currentTab });
-      } else if (hash.startsWith('upload-')) {
-        const id = hash.replace('upload-', '');
-        setSubPageView({ type: 'upload-drive', examId: id, fromTab: currentTab });
-      } else if (hash === 'folder-upload') {
-        setSubPageView({ type: 'folder-upload', fromTab: currentTab });
-      } else if (hash === 'login') {
-        setSubPageView({ type: 'teacher-login', fromTab: currentTab });
-      } else if (hash.startsWith('edit-')) {
-        const id = hash.replace('edit-', '');
-        setSubPageView({ type: 'edit-exam', examId: id, fromTab: currentTab });
-      } else if (hash.startsWith('print-')) {
-        const scope = hash.replace('print-', '') as 'all' | 'teacher' | 'saved';
-        setSubPageView({ type: 'print-setup', scope: ['all', 'teacher', 'saved'].includes(scope) ? scope : 'all', fromTab: currentTab });
-      } else if (['dashboard', 'schedule', 'my-schedule', 'calendar', 'teacher', 'alerts', 'cloud'].includes(hash)) {
-        setSubPageView(null);
-        setCurrentTab(hash as any);
-      }
-    };
-
-    window.addEventListener('hashchange', handleHashChange);
-    return () => window.removeEventListener('hashchange', handleHashChange);
-  }, [currentTab]);
-
-  // Search & Filters
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filterYear, setFilterYear] = useState<number | 'all'>('all');
-  const [filterStatus, setFilterStatus] = useState<'all' | 'บรรพชิต' | 'คฤหัสถ์'>('all');
-  const [filterFaculty, setFilterFaculty] = useState<string>('all');
-  const [filterDate, setFilterDate] = useState<string>('all');
-
-  // Sorting
-  const [sortKey, setSortKey] = useState<'orderNo' | 'examDateISO' | 'courseCode' | 'yearLevel'>('orderNo');
-  const [sortAsc, setSortAsc] = useState(true);
-
-  // Widescreen auto-expansion mode (default to true for expansive responsive layout)
-  const [isWidescreen, setIsWidescreen] = useState<boolean>(() => {
-    try {
-      const saved = localStorage.getItem('mcu_widescreen');
-      return saved !== null ? saved === 'true' : true;
-    } catch {
-      return true;
-    }
-  });
-
-  const handleToggleWidescreen = () => {
-    setIsWidescreen(prev => {
-      const next = !prev;
-      try {
-        localStorage.setItem('mcu_widescreen', next.toString());
-      } catch {}
-      return next;
-    });
+  const handleBatchUploadSuccess = async () => {
+    await loadCourses();
   };
 
-  // Sync to localStorage
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY_EXAMS, JSON.stringify(exams));
-    } catch {
-      // ignore
-    }
-  }, [exams]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY_SAVED, JSON.stringify(savedExamIds));
-    } catch {
-      // ignore
-    }
-  }, [savedExamIds]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY_SETTINGS, JSON.stringify(settings));
-    } catch {
-      // ignore
-    }
-  }, [settings]);
-
-  useEffect(() => {
-    try {
-      if (currentUser) {
-        localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(currentUser));
-        // Auto-sync teaching courses to savedExamIds for seamless schedule viewing
-        if (currentUser.role === 'teacher') {
-          const teacherCourseIds = exams.filter(e => isLecturerMatch(e.lecturer, currentUser)).map(e => e.id);
-          if (teacherCourseIds.length > 0) {
-            setSavedExamIds(prev => {
-              const isDefaultSample = prev.length === 4 && ['exam-1', 'exam-2', 'exam-4', 'exam-6'].every(id => prev.includes(id));
-              if (isDefaultSample) {
-                return teacherCourseIds;
-              }
-              return Array.from(new Set([...teacherCourseIds, ...prev]));
-            });
-          }
-        }
-      } else {
-        localStorage.removeItem(STORAGE_KEY_USER);
-      }
-    } catch {
-      // ignore
-    }
-  }, [currentUser, exams]);
-
-  // Distinct lists for dropdowns
-  const distinctFaculties = useMemo(() => {
-    return Array.from(new Set(exams.map(e => e.faculty))).filter(f => f && f !== 'ทุกคณะ').sort();
-  }, [exams]);
-
-  const distinctDates = useMemo(() => {
-    return Array.from(new Set(exams.map(e => e.examDateThai))).filter(Boolean);
-  }, [exams]);
-
-  // Filtered & Sorted exams
-  const filteredExams = useMemo(() => {
-    return exams.filter(exam => {
-      // Search text
-      if (searchQuery.trim()) {
-        const q = searchQuery.toLowerCase().trim();
-        const matchCode = exam.courseCode.toLowerCase().includes(q);
-        const matchName = exam.courseName.toLowerCase().includes(q);
-        const matchLecturer = exam.lecturer.toLowerCase().includes(q);
-        const matchFaculty = exam.faculty.toLowerCase().includes(q);
-        const matchMajor = exam.major.toLowerCase().includes(q);
-        const matchDate = exam.examDateThai.toLowerCase().includes(q);
-        const matchNotes = (exam.notes || '').toLowerCase().includes(q);
-        const matchRoom = (exam.room || '').toLowerCase().includes(q);
-        if (!matchCode && !matchName && !matchLecturer && !matchFaculty && !matchMajor && !matchDate && !matchNotes && !matchRoom) {
-          return false;
-        }
-      }
-
-      // Year
-      if (filterYear !== 'all' && exam.yearLevel !== filterYear) {
-        return false;
-      }
-
-      // Status
-      if (filterStatus !== 'all' && exam.status !== filterStatus) {
-        return false;
-      }
-
-      // Faculty
-      if (filterFaculty !== 'all' && exam.faculty !== filterFaculty) {
-        return false;
-      }
-
-      // Date
-      if (filterDate !== 'all' && exam.examDateThai !== filterDate) {
-        return false;
-      }
-
-      return true;
-    }).sort((a, b) => {
-      let comparison = 0;
-      if (sortKey === 'orderNo') {
-        comparison = a.orderNo - b.orderNo;
-      } else if (sortKey === 'yearLevel') {
-        comparison = a.yearLevel - b.yearLevel;
-      } else if (sortKey === 'courseCode') {
-        comparison = a.courseCode.localeCompare(b.courseCode);
-      } else if (sortKey === 'examDateISO') {
-        comparison = (a.examDateISO + a.startTime).localeCompare(b.examDateISO + b.startTime);
-      }
-      return sortAsc ? comparison : -comparison;
-    });
-  }, [exams, searchQuery, filterYear, filterStatus, filterFaculty, filterDate, sortKey, sortAsc]);
-
-  // Next upcoming exam overall
-  const nextUpcomingExam = useMemo(() => {
-    if (exams.length === 0) return null;
-    const sorted = [...exams].sort((a, b) => {
-      return (a.examDateISO + a.startTime).localeCompare(b.examDateISO + b.startTime);
-    });
-    return sorted[0];
-  }, [exams]);
-
-  // Handlers
-  const handleToggleSave = (id: string) => {
-    setSavedExamIds(prev => 
-      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+  // 1. Loading screen while checking authentication session
+  if (isAuthChecking) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-[#FFF5F8] via-white to-[#FCE7F3] flex flex-col items-center justify-center p-4">
+        <div className="flex flex-col items-center gap-4 p-8 bg-white/90 backdrop-blur-md rounded-3xl border border-[#F8D7E3] shadow-lg max-w-sm text-center">
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#9D174D] to-[#701A4B] text-white flex items-center justify-center shadow-md animate-pulse">
+            <GraduationCap className="w-8 h-8" />
+          </div>
+          <div>
+            <h2 className="text-base font-bold text-slate-800">มหาวิทยาลัยมหาจุฬาลงกรณราชวิทยาลัย</h2>
+            <p className="text-xs text-[#854D67] mt-0.5">วิทยาลัยสงฆ์พ่อขุนผาเมือง เพชรบูรณ์</p>
+          </div>
+          <div className="flex items-center gap-2 text-xs text-slate-500 font-medium">
+            <RefreshCw className="w-4 h-4 text-[#9D174D] animate-spin" />
+            <span>กำลังตรวจสอบสิทธิ์การเข้าใช้งานระบบ...</span>
+          </div>
+        </div>
+      </div>
     );
-  };
+  }
 
-  const handleClearAllSaved = () => {
-    if (window.confirm('ต้องการล้างวิชาที่บันทึกไว้ทั้งหมดหรือไม่?')) {
-      setSavedExamIds([]);
-    }
-  };
+  // 2. Enforce closed internal system: strictly require authentication
+  if (!currentUser) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-[#FFF5F8] via-white to-[#FCE7F3] flex flex-col items-center justify-center p-4">
+        <TeacherLoginPage onLoginSuccess={handleLoginSuccess} />
+      </div>
+    );
+  }
 
-  const handleBatchSaveByYear = (year: number, status: 'บรรพชิต' | 'คฤหัสถ์') => {
-    const matchingIds = exams
-      .filter(e => e.yearLevel === year && (e.status === status || e.status === 'ทั่วไป'))
-      .map(e => e.id);
-    
-    setSavedExamIds(prev => Array.from(new Set([...prev, ...matchingIds])));
-  };
-
-  const handleResetFilters = () => {
-    setFilterYear('all');
-    setFilterStatus('all');
-    setFilterFaculty('all');
-    setFilterDate('all');
-    setSearchQuery('');
-  };
-
-  const handleEditExam = (exam: ExamItem) => {
-    if (!currentUser) {
-      navigateToLogin();
-      return;
-    }
-    navigateToEditExam(exam);
-  };
-
-  const handleAddNewExam = () => {
-    if (!currentUser) {
-      navigateToLogin();
-      return;
-    }
-    const newOrderNo = exams.length > 0 ? Math.max(...exams.map(e => e.orderNo)) + 1 : 1;
-    const newExam: ExamItem = {
-      id: `exam-${Date.now()}`,
-      orderNo: newOrderNo,
-      yearLevel: 1,
-      faculty: 'พุทธศาสตร์',
-      major: 'สาขาวิชาพระพุทธศาสนา',
-      examDateThai: '5 ตุลาคม 2569',
-      examDateISO: '2026-10-05',
-      examTimeThai: '09.00 - 11.30 น.',
-      startTime: '09:00',
-      endTime: '11:30',
-      courseCode: '',
-      courseName: '',
-      lecturer: currentUser.name,
-      notes: '',
-      status: 'บรรพชิต',
-      room: 'ห้องประชุมชั้น 1',
-      examType: 'onsite'
-    };
-    navigateToEditExam(newExam);
-  };
-
-  const handleSaveExam = async (updatedExam: ExamItem, shouldBroadcastLine: boolean) => {
-    const exists = exams.some(e => e.id === updatedExam.id);
-    let newExams: ExamItem[];
-    if (exists) {
-      newExams = exams.map(e => (e.id === updatedExam.id ? updatedExam : e));
-    } else {
-      newExams = [updatedExam, ...exams];
-    }
-    setExams(newExams);
-
-    if (shouldBroadcastLine) {
-      const msg = formatLineNotifyMessage(updatedExam, 'อัปเดตกำหนดการสอบล่าสุด');
-      await sendLineNotifyNotification(msg, settings.lineNotifyToken, settings.webhookUrl);
-      sendBrowserNotification('อัปเดตตารางสอบแล้ว!', `วิชา: ${updatedExam.courseName} (${updatedExam.courseCode})`);
-    }
-  };
-
-  const handleDeleteExam = (id: string) => {
-    setExams(prev => prev.filter(e => e.id !== id));
-    setSavedExamIds(prev => prev.filter(x => x !== id));
-  };
-
-  const handleResetToDefault = () => {
-    const cleanData = RAW_EXAMS_DATA.map(item => ({
-      ...item,
-      room: 'ห้องประชุมชั้น 1',
-      examSubmissionStatus: undefined,
-      examSubmissionDate: undefined,
-      examLink: undefined,
-      examFileName: undefined
-    }));
-    setExams(cleanData);
-    localStorage.removeItem(STORAGE_KEY_EXAMS);
-  };
-
-  const handleExportExcel = () => {
-    exportExamsToExcel(exams, 'mcu-exam-schedule-2569', 'ตารางสอบทั้งหมด');
-  };
-
-  const handleExportCSV = () => {
-    const headers = [
-      'ชั้นปี', 'คณะ', 'สาขาวิชา', 'วันสอบ', 'เวลาสอบ', 
-      'รหัสวิชา', 'รายวิชา', 'อาจารย์ผู้บรรยาย', 'หมายเหตุ', 'สถานะ', 'ห้องสอบ'
-    ];
-    const rows = exams.map(e => [
-      e.yearLevel,
-      `"${e.faculty}"`,
-      `"${e.major}"`,
-      `"${e.examDateThai}"`,
-      `"${e.examTimeThai}"`,
-      `"${e.courseCode}"`,
-      `"${e.courseName.replace(/"/g, '""')}"`,
-      `"${e.lecturer.replace(/"/g, '""')}"`,
-      `"${e.notes.replace(/"/g, '""')}"`,
-      `"${e.status}"`,
-      `"${(e.room || 'ห้องประชุมชั้น 1').replace(/"/g, '""')}"`
-    ]);
-
-    const csvContent = '\uFEFF' + [headers.join(','), ...rows.map(r => r.join(','))].join('\r\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `mcu-exam-schedule-${new Date().toISOString().split('T')[0]}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
-  const handleSyncWithGoogleDrive = async (silent: boolean = false) => {
-    const targetWebhook = settings.webhookUrl || localStorage.getItem('mcu_exam_portal_webhook') || '';
-    if (!targetWebhook.trim()) {
-      if (!silent) {
-        alert('⚠️ ยังไม่ได้ระบุ Google Apps Script Webhook URL ในระบบ\n\nกรุณาไปที่แท็บ "Apps Script & Cloud" หรือหน้า "อัปโหลดโฟลเดอร์" เพื่อกรอก Webhook URL ก่อนกดซิงค์ครับ');
-      }
-      return;
-    }
-
-    setIsSyncingDrive(true);
-    try {
-      const cleanFolderId = extractDriveFolderId(centralDriveFolderUrl);
-      const res = await syncExamsWithGoogleDrive(targetWebhook, exams, cleanFolderId);
-      
-      if (res.success) {
-        if (res.syncedCount > 0) {
-          setExams(res.updatedExams);
-          setSyncToast({
-            type: 'success',
-            message: `🎉 ซิงค์สำเร็จ! พบข้อสอบใน Google Drive ${res.driveFilesCount} ไฟล์ (ปรับสถานะพร้อมสอบ ${res.syncedCount} รายวิชา)`
-          });
-        } else {
-          if (!silent) {
-            setSyncToast({
-              type: 'info',
-              message: res.message
-            });
-            if (res.driveFilesCount === 0) {
-              setTimeout(() => {
-                alert(
-                  `ℹ️ รายงานผลการตรวจสอบ Google Drive (โฟลเดอร์ ID: ${cleanFolderId}):\n\n` +
-                  `ระบบเชื่อมต่อสำเร็จ แต่ไม่พบไฟล์ข้อสอบในโฟลเดอร์ Google Drive ดังกล่าว\n\n` +
-                  `💡 สิ่งที่ควรตรวจสอบ:\n` +
-                  `1. ได้นำไฟล์ข้อสอบไปใส่ในโฟลเดอร์ Google Drive รับข้อสอบกลางแล้วหรือยัง\n` +
-                  `2. หากเพิ่งติดตั้ง Google Apps Script ให้ไปที่แท็บ "Apps Script & Cloud" คัดลอกโค้ดใหม่ และกด Deploy (การทำให้ใช้งานได้ใหม่) อีกครั้ง เพื่อเปิดฟังก์ชันค้นหาไฟล์ใน Drive ครับ`
-                );
-              }, 200);
-            }
-          }
-        }
-      } else {
-        if (!silent) {
-          if (res.isOldScriptVersion) {
-            alert(res.message);
-          } else {
-            setSyncToast({
-              type: 'error',
-              message: res.message
-            });
-          }
-        }
-      }
-    } catch (err) {
-      if (!silent) {
-        setSyncToast({
-          type: 'error',
-          message: `เกิดข้อผิดพลาด: ${(err as Error).message}`
-        });
-      }
-    } finally {
-      setIsSyncingDrive(false);
-      setTimeout(() => setSyncToast(null), 6000);
-    }
-  };
-
-  // Auto-sync with Google Drive once on mount if webhookUrl is available
-  useEffect(() => {
-    const targetWebhook = settings.webhookUrl || localStorage.getItem('mcu_exam_portal_webhook') || '';
-    if (targetWebhook.trim()) {
-      handleSyncWithGoogleDrive(true);
-    }
-  }, []);
-
-  const handleExportBackup = () => {
-    exportBackupJson(exams, settings, savedExamIds, centralDriveFolderUrl);
-    setSyncToast({
-      type: 'success',
-      message: '💾 ส่งออกไฟล์สำรองข้อมูล (JSON) สำเร็จ สามารถนำไปใช้งานในเบราว์เซอร์อื่นได้ทันที'
-    });
-    setTimeout(() => setSyncToast(null), 4000);
-  };
-
-  const handleImportBackupFile = async (file: File) => {
-    try {
-      const data = await readBackupFile(file);
-      if (data.exams && Array.isArray(data.exams)) {
-        setExams(data.exams);
-        if (data.settings) setSettings(data.settings);
-        if (data.savedExamIds && Array.isArray(data.savedExamIds)) setSavedExamIds(data.savedExamIds);
-        if (data.centralDriveFolderUrl) setCentralDriveFolderUrl(data.centralDriveFolderUrl);
-
-        setSyncToast({
-          type: 'success',
-          message: `📥 กู้คืนข้อมูลสำเร็จ! นำเข้ารายวิชา ${data.metrics.totalExams} วิชา (สถานะพร้อมสอบ ${data.metrics.submittedExams} วิชา)`
-        });
-        setTimeout(() => setSyncToast(null), 5000);
-      }
-    } catch (err) {
-      alert(`⚠️ เกิดข้อผิดพลาดในการนำเข้าไฟล์สำรอง: ${(err as Error).message}`);
-    }
-  };
-
-  const handleImportJSON = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    handleImportBackupFile(file);
-    e.target.value = '';
-  };
-
-  const handlePrint = (customScope?: any) => {
-    let resolvedScope: 'all' | 'teacher' | 'saved' = 'all';
-    if (typeof customScope === 'string' && ['all', 'teacher', 'saved'].includes(customScope)) {
-      resolvedScope = customScope as 'all' | 'teacher' | 'saved';
-    } else {
-      resolvedScope = (currentUser && currentUser.role !== 'admin' && currentTab === 'teacher')
-        ? 'teacher'
-        : (currentTab === 'my-schedule' ? 'saved' : 'all');
-    }
-
-    if (resolvedScope === 'teacher' && currentUser) {
-      const teacherCourses = exams.filter(e => isLecturerMatch(e.lecturer, currentUser));
-      setPrintTargetExams(teacherCourses);
-      setPrintSubtitle(`ใบแจ้งกำหนดการสอบไล่รายวิชา (อาจารย์ผู้บรรยาย: ${currentUser.name}) ประจำปีการศึกษา 2569`);
-      setPrintSignatoryTeacher(currentUser.name);
-    } else if (resolvedScope === 'saved') {
-      const savedCourses = exams.filter(e => savedExamIds.includes(e.id));
-      setPrintTargetExams(savedCourses);
-      setPrintSubtitle('ใบแจ้งกำหนดการสอบไล่รายบุคคล (วิชาที่บันทึกไว้) ประจำปีการศึกษา 2569');
-      setPrintSignatoryTeacher(undefined);
-    } else {
-      setPrintTargetExams(filteredExams.length > 0 ? filteredExams : exams);
-      setPrintSubtitle('ตารางสอบไล่ ประจำภาคการศึกษาที่ 1 ปีการศึกษา 2569');
-      setPrintSignatoryTeacher(undefined);
-    }
-
-    navigateToPrintSetup(resolvedScope);
-  };
-
-  const handlePrintSingleExamSlip = (exam: ExamItem) => {
-    setPrintTargetExams([exam]);
-    setPrintSubtitle(`ใบแจ้งกำหนดการสอบไล่รายวิชา (อาจารย์ผู้บรรยาย: ${exam.lecturer}) ประจำปีการศึกษา 2569`);
-    setPrintSignatoryTeacher(exam.lecturer);
-    navigateToPrintSetup('teacher');
-  };
-
-  const handleOpenAlertForExam = () => {
-    if (!currentUser) {
-      navigateToLogin();
-      return;
-    }
-    setCurrentTab('alerts');
-  };
-
-  // Redirect to public schedule if public visitor lands on teacher-only tabs
-  useEffect(() => {
-    if (!currentUser && ['my-schedule', 'teacher', 'alerts', 'cloud'].includes(currentTab)) {
-      setCurrentTab('schedule');
-    }
-  }, [currentUser, currentTab]);
-
-  const handleLogout = () => {
-    setCurrentUser(null);
-    localStorage.removeItem(STORAGE_KEY_USER);
-    if (['my-schedule', 'teacher', 'alerts', 'cloud'].includes(currentTab)) {
-      setCurrentTab('schedule');
-    }
-  };
-
-  const handleNavigateFromDashboardToSchedule = (
-    facultyFilter?: string, 
-    yearFilter?: number | 'all', 
-    dateFilter?: string,
-    searchFilter?: string
-  ) => {
-    if (facultyFilter) {
-      setFilterFaculty(facultyFilter);
-    }
-    if (yearFilter !== undefined) {
-      setFilterYear(yearFilter);
-    }
-    if (dateFilter) {
-      setFilterDate(dateFilter);
-    }
-    if (searchFilter !== undefined) {
-      setSearchQuery(searchFilter);
-    }
-    setCurrentTab('schedule');
-  };
-
+  // 3. Authenticated university system with Role-Based Access Control
   return (
     <div className="min-h-screen bg-[#FFF8FA] text-slate-800 flex flex-col selection:bg-rose-200 selection:text-rose-950">
-      {/* Top Navigation */}
       <Navbar
         currentTab={currentTab}
         setCurrentTab={(tab) => {
           setSubPageView(null);
           setCurrentTab(tab);
-          window.location.hash = tab;
         }}
         currentUser={currentUser}
-        onOpenLogin={navigateToLogin}
         onLogout={handleLogout}
-        savedCount={
-          currentUser && currentUser.role !== 'admin'
-            ? exams.filter(e => isLecturerMatch(e.lecturer, currentUser)).length
-            : savedExamIds.length
-        }
         totalExamsCount={exams.length}
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
-        onPrint={() => navigateToPrintSetup('all')}
+        onPrint={handlePrint}
         onExportExcel={handleExportExcel}
         isWidescreen={isWidescreen}
-        onToggleWidescreen={handleToggleWidescreen}
-        onNavigateToFolderUpload={navigateToFolderUpload}
-        onSyncDrive={() => handleSyncWithGoogleDrive(false)}
-        isSyncingDrive={isSyncingDrive}
-        onExportBackup={handleExportBackup}
-        onImportBackup={handleImportBackupFile}
+        onToggleWidescreen={() => setIsWidescreen(!isWidescreen)}
       />
 
-      {/* Main Container */}
       <main className="flex-1 pb-24 md:pb-16">
         {subPageView ? (
           <div className={`${isWidescreen ? 'max-w-[98%] 2xl:max-w-[1720px]' : 'max-w-7xl'} mx-auto px-3 sm:px-4 md:px-6 py-4 sm:py-6`}>
@@ -843,75 +229,15 @@ export default function App() {
               return (
                 <CourseDetailPage
                   exam={exam}
-                  currentUser={currentUser}
+                  currentUser={teacherUserView}
                   onBack={handleBackFromSubPage}
-                  onNavigateToUpload={(targetExam) => navigateToUploadDrive(targetExam)}
-                  onNavigateToEdit={(targetExam) => navigateToEditExam(targetExam)}
-                  onNavigateToLogin={navigateToLogin}
-                  onPrintSlip={handlePrintSingleExamSlip}
-                  centralDriveFolderUrl={centralDriveFolderUrl}
+                  onNavigateToUpload={() => setCurrentTab('folder-upload')}
+                  onNavigateToEdit={(target) => setSubPageView({ type: 'edit-exam', examId: target.id })}
+                  onNavigateToLogin={() => {}}
+                  onPrintSlip={() => window.print()}
                 />
               );
             })()}
-
-            {subPageView.type === 'pending-exams' && (
-              <PendingExamsPage
-                exams={exams}
-                initialMode={subPageView.mode}
-                onBack={handleBackFromSubPage}
-                onNavigateToSchedule={handleNavigateFromDashboardToSchedule}
-                onViewExamDetails={(targetExam) => navigateToCourseDetail(targetExam)}
-              />
-            )}
-
-            {subPageView.type === 'upload-drive' && (() => {
-              const exam = exams.find(e => e.id === subPageView.examId);
-              if (!exam) return null;
-              return (
-                <ExamUploadDrivePage
-                  exam={exam}
-                  currentUser={currentUser}
-                  centralDriveFolderUrl={centralDriveFolderUrl}
-                  webhookUrl={settings.webhookUrl}
-                  onBack={handleBackFromSubPage}
-                  onUploadSuccess={(examId, fileUrl, uploadedDate) => {
-                    handleUploadExamSuccess(examId, fileUrl, uploadedDate);
-                  }}
-                />
-              );
-            })()}
-
-            {subPageView.type === 'folder-upload' && (
-              <BatchFolderUploadPage
-                exams={exams}
-                currentUser={currentUser}
-                centralDriveFolderUrl={centralDriveFolderUrl}
-                webhookUrl={settings.webhookUrl}
-                onUpdateWebhookUrl={(url) => {
-                  const updated = { ...settings, webhookUrl: url };
-                  setSettings(updated);
-                  try {
-                    localStorage.setItem(STORAGE_KEY_SETTINGS, JSON.stringify(updated));
-                  } catch {}
-                }}
-                onBack={handleBackFromSubPage}
-                onBatchUploadSuccess={(updates) => {
-                  handleBatchUploadSuccess(updates);
-                }}
-              />
-            )}
-
-            {subPageView.type === 'teacher-login' && (
-              <TeacherLoginPage
-                exams={exams}
-                onBack={handleBackFromSubPage}
-                onLoginSuccess={(user) => {
-                  setCurrentUser(user);
-                  setCurrentTab('teacher');
-                  setSubPageView(null);
-                }}
-              />
-            )}
 
             {subPageView.type === 'edit-exam' && (() => {
               const exam = exams.find(e => e.id === subPageView.examId);
@@ -919,314 +245,95 @@ export default function App() {
               return (
                 <ExamEditPage
                   exam={exam}
-                  currentUser={currentUser}
+                  currentUser={teacherUserView}
                   onBack={handleBackFromSubPage}
-                  onSave={handleSaveExam}
+                  onSave={() => {
+                    handleBackFromSubPage();
+                    loadCourses();
+                  }}
                 />
               );
             })()}
 
             {subPageView.type === 'print-setup' && (
               <PrintSetupPage
-                exams={exams}
-                currentUser={currentUser}
-                savedExamIds={savedExamIds}
+                exams={filteredExams}
+                currentUser={teacherUserView}
+                savedExamIds={[]}
                 initialScope={subPageView.scope}
                 onBack={handleBackFromSubPage}
-                onSyncPrintExams={handleSyncPrintExams}
+                onSyncPrintExams={loadCourses}
               />
             )}
           </div>
         ) : (
-          <>
-            {/* TAB 0: DASHBOARD (ภาพรวมสถิติการสอบด้วยกราฟ Data Visualization) */}
-            {currentTab === 'dashboard' && (
-              <Dashboard
-                exams={exams}
-                onNavigateToSchedule={handleNavigateFromDashboardToSchedule}
-                onNavigateToCalendar={() => { setSubPageView(null); setCurrentTab('calendar'); }}
-                onOpenPrintModal={() => navigateToPrintSetup('all')}
-                onViewExamDetails={(exam) => navigateToCourseDetail(exam)}
-                onOpenPendingExams={(mode) => navigateToPendingExams(mode)}
-                isWidescreen={isWidescreen}
-              />
-            )}
-
-            {/* TAB 1: FULL SCHEDULE (100% CLEAN TABLE FORMAT) */}
-            {currentTab === 'schedule' && (
-              <div className={`${isWidescreen ? 'max-w-[98%] 2xl:max-w-[1720px]' : 'max-w-7xl'} mx-auto px-2 sm:px-4 md:px-6 py-4 sm:py-5 space-y-4`}>
-                <OfficialTableView
-                  exams={filteredExams}
-                  savedExamIds={savedExamIds}
-                  onToggleSave={handleToggleSave}
-                  currentUser={currentUser}
-                  onAddNewExam={handleAddNewExam}
-                  onEditExam={handleEditExam}
-                  onOpenAlertForExam={handleOpenAlertForExam}
-                  onViewExamDetails={(exam) => navigateToCourseDetail(exam)}
-                  filterYear={filterYear}
-                  setFilterYear={setFilterYear}
-                  filterStatus={filterStatus}
-                  setFilterStatus={setFilterStatus}
-                  filterFaculty={filterFaculty}
-                  setFilterFaculty={setFilterFaculty}
-                  filterDate={filterDate}
-                  setFilterDate={setFilterDate}
-                  distinctFaculties={distinctFaculties}
-                  distinctDates={distinctDates}
-                  sortKey={sortKey}
-                  setSortKey={setSortKey}
-                  sortAsc={sortAsc}
-                  setSortAsc={setSortAsc}
-                  onResetFilters={handleResetFilters}
-                  onExportExcel={handleExportExcel}
-                  onPrint={() => navigateToPrintSetup('all')}
-                  isWidescreen={isWidescreen}
-                  onToggleWidescreen={handleToggleWidescreen}
-                />
-              </div>
-            )}
-
-            {/* TAB 2: MY SCHEDULE (เฉพาะอาจารย์ผู้สอนที่เข้าสู่ระบบเท่านั้น) */}
-            {currentTab === 'my-schedule' && (
-              currentUser ? (
-                <MyScheduleView
-                  exams={exams}
-                  savedExamIds={savedExamIds}
-                  onToggleSave={handleToggleSave}
-                  onClearAllSaved={handleClearAllSaved}
-                  onBatchSaveByYear={handleBatchSaveByYear}
-                  onPrint={() => navigateToPrintSetup('teacher')}
-                  onOpenAlertForExam={handleOpenAlertForExam}
-                  isWidescreen={isWidescreen}
-                  currentUser={currentUser}
-                  centralDriveFolderUrl={centralDriveFolderUrl}
-                  onToggleSubmissionStatus={handleToggleExamSubmission}
-                  webhookUrl={settings.webhookUrl}
-                  onUploadExamSuccess={handleUploadExamSuccess}
-                  onViewExamDetails={(exam) => navigateToCourseDetail(exam)}
-                />
-              ) : (
-                <div className="max-w-md mx-auto my-12 p-8 bg-white rounded-2xl border border-[#F8D7E3] text-center space-y-4 shadow-xs">
-                  <div className="w-12 h-12 rounded-2xl bg-[#FFF0F5] text-[#9D174D] flex items-center justify-center mx-auto border border-[#F8D7E3]">
-                    <Lock className="w-6 h-6" />
-                  </div>
-                  <h3 className="font-bold text-base text-slate-800">เฉพาะอาจารย์ผู้สอนเท่านั้น</h3>
-                  <p className="text-xs text-[#854D67]">
-                    เมนู "วิชาข้อสอบของฉัน" เปิดให้ใช้งานเฉพาะอาจารย์ผู้สอนที่เข้าสู่ระบบแล้วเท่านั้น
-                  </p>
-                  <button
-                    onClick={navigateToLogin}
-                    className="px-5 py-2.5 bg-[#9D174D] hover:bg-[#831843] text-white text-xs font-semibold rounded-xl shadow-xs transition cursor-pointer"
-                  >
-                    เข้าสู่ระบบอาจารย์
-                  </button>
-                </div>
-              )
-            )}
-
-            {/* TAB 3: CALENDAR VIEW (TABLE FORMAT BY DATE - สาธารณะ) */}
-            {currentTab === 'calendar' && (
-              <CalendarView
-                exams={exams}
-                savedExamIds={savedExamIds}
-                onToggleSave={handleToggleSave}
-                currentUser={currentUser}
-                onEditExam={handleEditExam}
-                onOpenAlertForExam={handleOpenAlertForExam}
-                isWidescreen={isWidescreen}
-              />
-            )}
-
-            {/* TAB 4: TEACHER PORTAL (เฉพาะอาจารย์ผู้สอนที่เข้าสู่ระบบเท่านั้น) */}
+          <div className={`${isWidescreen ? 'max-w-[98%] 2xl:max-w-[1720px]' : 'max-w-7xl'} mx-auto px-3 sm:px-4 md:px-6 py-4 sm:py-6`}>
+            {/* TEACHER ROLE VIEWS */}
             {currentTab === 'teacher' && (
-              currentUser ? (
-                <TeacherPortal
-                  currentUser={currentUser}
-                  onOpenLogin={navigateToLogin}
-                  exams={exams}
-                  onAddNewExam={handleAddNewExam}
-                  onEditExam={handleEditExam}
-                  onDeleteExam={handleDeleteExam}
-                  onResetToDefault={handleResetToDefault}
-                  onExportCSV={handleExportCSV}
-                  onExportExcel={handleExportExcel}
-                  onPrint={() => navigateToPrintSetup('teacher')}
-                  onImportJSON={handleImportJSON}
-                  lineNotifyToken={settings.lineNotifyToken}
-                  webhookUrl={settings.webhookUrl}
-                  isWidescreen={isWidescreen}
-                  centralDriveFolderUrl={centralDriveFolderUrl}
-                  onUpdateCentralDriveFolder={handleUpdateCentralDriveFolder}
-                  onToggleSubmissionStatus={handleToggleExamSubmission}
-                  onUploadExamSuccess={handleUploadExamSuccess}
-                  onBatchUploadSuccess={handleBatchUploadSuccess}
-                  onViewExamDetails={(exam) => navigateToCourseDetail(exam)}
-                  onNavigateToFolderUpload={navigateToFolderUpload}
-                  onSyncDrive={() => handleSyncWithGoogleDrive(false)}
-                  isSyncingDrive={isSyncingDrive}
-                  onExportBackup={handleExportBackup}
-                />
-              ) : (
-                <div className="max-w-md mx-auto my-12 p-8 bg-white rounded-2xl border border-[#F8D7E3] text-center space-y-4 shadow-xs">
-                  <div className="w-12 h-12 rounded-2xl bg-[#FFF0F5] text-[#9D174D] flex items-center justify-center mx-auto border border-[#F8D7E3]">
-                    <Lock className="w-6 h-6" />
-                  </div>
-                  <h3 className="font-bold text-base text-slate-800">เฉพาะอาจารย์ผู้สอนเท่านั้น</h3>
-                  <p className="text-xs text-[#854D67]">
-                    กรุณาเข้าสู่ระบบด้วยรหัสอาจารย์เพื่อเข้าใช้งานระบบจัดการสอบ
-                  </p>
-                  <button
-                    onClick={navigateToLogin}
-                    className="px-5 py-2.5 bg-[#9D174D] hover:bg-[#831843] text-white text-xs font-semibold rounded-xl shadow-xs transition cursor-pointer"
-                  >
-                    เข้าสู่ระบบอาจารย์
-                  </button>
-                </div>
-              )
+              <TeacherPortal
+                currentUser={teacherUserView}
+                onOpenLogin={() => {}}
+                exams={filteredExams}
+                onAddNewExam={() => {}}
+                onEditExam={(exam) => setSubPageView({ type: 'edit-exam', examId: exam.id })}
+                onDeleteExam={() => {}}
+                onResetToDefault={() => {}}
+                onExportCSV={handleExportExcel}
+                onExportExcel={handleExportExcel}
+                onPrint={handlePrint}
+                onImportJSON={() => {}}
+                onUploadExamSuccess={loadCourses}
+                onBatchUploadSuccess={handleBatchUploadSuccess}
+                onViewExamDetails={(exam) => setSubPageView({ type: 'course-detail', examId: exam.id })}
+                onNavigateToFolderUpload={() => setCurrentTab('folder-upload')}
+              />
             )}
 
-            {/* TAB 5: ALERTS & LINE NOTIFY */}
-            {currentTab === 'alerts' && (
-              currentUser ? (
-                <AlertCenter
-                  exams={exams}
-                  savedExamIds={savedExamIds}
-                  settings={settings}
-                  onUpdateSettings={setSettings}
-                  nextUpcomingExam={nextUpcomingExam}
-                  currentUser={currentUser}
-                />
-              ) : (
-                <div className="max-w-md mx-auto my-12 p-8 bg-white rounded-2xl border border-[#F8D7E3] text-center space-y-4 shadow-xs">
-                  <div className="w-12 h-12 rounded-2xl bg-[#FFF0F5] text-[#9D174D] flex items-center justify-center mx-auto border border-[#F8D7E3]">
-                    <Lock className="w-6 h-6" />
-                  </div>
-                  <h3 className="font-bold text-base text-slate-800">เฉพาะอาจารย์ผู้สอนเท่านั้น</h3>
-                  <p className="text-xs text-[#854D67]">
-                    ระบบส่งการแจ้งเตือน & LINE Notify สงวนสิทธิ์สำหรับอาจารย์ผู้สอน
-                  </p>
-                  <button
-                    onClick={navigateToLogin}
-                    className="px-5 py-2.5 bg-[#9D174D] hover:bg-[#831843] text-white text-xs font-semibold rounded-xl shadow-xs transition cursor-pointer"
-                  >
-                    เข้าสู่ระบบอาจารย์
-                  </button>
-                </div>
-              )
+            {currentTab === 'folder-upload' && (
+              <BatchFolderUploadPage
+                exams={filteredExams}
+                currentUser={teacherUserView}
+                onBack={() => {
+                  if (currentUser.role === 'teacher') setCurrentTab('teacher');
+                  else if (currentUser.role === 'staff') setCurrentTab('staff');
+                  else setCurrentTab('admin');
+                }}
+                onBatchUploadSuccess={handleBatchUploadSuccess}
+              />
             )}
 
-            {/* TAB 6: APPS SCRIPT & FIREBASE */}
-            {currentTab === 'cloud' && (
-              currentUser ? (
-                <AppsScriptView
-                  exams={exams}
-                  webhookUrl={settings.webhookUrl}
-                  onUpdateWebhookUrl={(url) => setSettings({ ...settings, webhookUrl: url })}
-                  lineToken={settings.lineNotifyToken}
-                  onUpdateLineToken={(token) => setSettings({ ...settings, lineNotifyToken: token })}
-                />
-              ) : (
-                <div className="max-w-md mx-auto my-12 p-8 bg-white rounded-2xl border border-[#F8D7E3] text-center space-y-4 shadow-xs">
-                  <div className="w-12 h-12 rounded-2xl bg-[#FFF0F5] text-[#9D174D] flex items-center justify-center mx-auto border border-[#F8D7E3]">
-                    <Lock className="w-6 h-6" />
-                  </div>
-                  <h3 className="font-bold text-base text-slate-800">เฉพาะอาจารย์และผู้ดูแลระบบเท่านั้น</h3>
-                  <p className="text-xs text-[#854D67]">
-                    การตั้งค่า Apps Script & Firebase เปิดให้ใช้งานเฉพาะผู้มีสิทธิ์ดูแลระบบ
-                  </p>
-                  <button
-                    onClick={navigateToLogin}
-                    className="px-5 py-2.5 bg-[#9D174D] hover:bg-[#831843] text-white text-xs font-semibold rounded-xl shadow-xs transition cursor-pointer"
-                  >
-                    เข้าสู่ระบบอาจารย์
-                  </button>
-                </div>
-              )
+            {/* STAFF ROLE VIEWS */}
+            {currentTab === 'staff' && (
+              <StaffExamVerificationPage
+                currentUser={currentUser}
+              />
             )}
-          </>
+
+            {/* ADMIN ROLE VIEWS */}
+            {currentTab === 'admin' && (
+              <AdminAccountManagementPage
+                currentUser={currentUser}
+              />
+            )}
+
+            {/* SCHEDULE TABLE VIEW */}
+            {currentTab === 'schedule' && (
+              <OfficialTableView
+                exams={filteredExams}
+                savedExamIds={[]}
+                onToggleSave={() => {}}
+                onViewExamDetails={(exam: ExamItem) => setSubPageView({ type: 'course-detail', examId: exam.id })}
+                currentUser={teacherUserView}
+              />
+            )}
+          </div>
         )}
       </main>
 
-      {/* Footer */}
-      <footer className="no-print bg-white border-t border-[#F8D7E3] py-5 pb-24 md:pb-5 text-xs text-[#854D67] text-center">
-        <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <p>© 2569 วิทยาลัยสงฆ์พ่อขุนผาเมือง เพชรบูรณ์ · มหาวิทยาลัยมหาจุฬาลงกรณราชวิทยาลัย (MCU Exam Timetable Portal)</p>
-          <div className="flex items-center gap-4 flex-wrap justify-center">
-            <button onClick={() => { setSubPageView(null); setCurrentTab('schedule'); }} className="hover:text-[#701A4B] transition">
-              ตารางสอบทั้งหมด
-            </button>
-            <span>·</span>
-            <button onClick={() => { setSubPageView(null); setCurrentTab('calendar'); }} className="hover:text-[#701A4B] transition">
-              ปฏิทินสอบตามวัน
-            </button>
-            {currentUser ? (
-              <>
-                <span>·</span>
-                <button onClick={() => { setSubPageView(null); setCurrentTab('teacher'); }} className="hover:text-[#701A4B] transition font-semibold text-[#701A4B]">
-                  จัดการสอบ (อาจารย์)
-                </button>
-                <span>·</span>
-                <button onClick={() => { setSubPageView(null); setCurrentTab('alerts'); }} className="hover:text-[#701A4B] transition">
-                  LINE Notify
-                </button>
-                <span>·</span>
-                <button onClick={() => { setSubPageView(null); setCurrentTab('cloud'); }} className="hover:text-[#701A4B] transition">
-                  Apps Script & Cloud
-                </button>
-              </>
-            ) : (
-              <>
-                <span>·</span>
-                <button onClick={navigateToLogin} className="hover:text-[#701A4B] transition font-semibold text-[#9D174D] flex items-center gap-1 cursor-pointer">
-                  <Lock className="w-3 h-3" />
-                  <span>เข้าสู่ระบบสำหรับอาจารย์</span>
-                </button>
-              </>
-            )}
-            <span>·</span>
-            <button onClick={handleExportExcel} className="hover:text-emerald-700 transition flex items-center gap-1 font-semibold text-emerald-800 cursor-pointer">
-              <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
-              <span>ส่งออก Excel (.xlsx)</span>
-            </button>
-            <span>·</span>
-            <button onClick={() => navigateToPrintSetup('all')} className="hover:text-[#701A4B] transition flex items-center gap-1 font-semibold cursor-pointer">
-              <Printer className="w-3.5 h-3.5 text-[#9D174D]" />
-              <span>พิมพ์ตารางสอบทางการ (A4)</span>
-            </button>
-          </div>
-        </div>
-      </footer>
-
-      {/* Root Academic Examination Sheet for A4 paper and PDF printing */}
-      <div id="official-print-section" className="hidden print-only">
-        <OfficialPrintSheet
-          exams={printTargetExams.length > 0 ? printTargetExams : (filteredExams.length > 0 ? filteredExams : exams)}
-          title="มหาวิทยาลัยมหาจุฬาลงกรณราชวิทยาลัย (MCU)"
-          college="วิทยาลัยสงฆ์พ่อขุนผาเมือง เพชรบูรณ์"
-          subtitle={printSubtitle}
-          signatoryTeacher={printSignatoryTeacher}
-        />
-      </div>
-      {/* Toast Notification */}
-      {syncToast && (
-        <div className={`fixed bottom-20 md:bottom-6 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl shadow-xl text-sm font-semibold flex items-center gap-2.5 animate-in fade-in slide-in-from-bottom-3 duration-200 border max-w-lg text-center ${
-          syncToast.type === 'success' 
-            ? 'bg-slate-900/95 text-white border-emerald-500/40 shadow-emerald-950/20' 
-            : syncToast.type === 'info'
-            ? 'bg-slate-900/95 text-white border-blue-500/40 shadow-blue-950/20'
-            : 'bg-rose-950/95 text-white border-rose-500/40 shadow-rose-950/20'
-        }`}>
-          {syncToast.type === 'success' ? (
-            <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
-          ) : syncToast.type === 'info' ? (
-            <Info className="w-5 h-5 text-blue-400 shrink-0" />
-          ) : (
-            <AlertCircle className="w-5 h-5 text-rose-400 shrink-0" />
-          )}
-          <span>{syncToast.message}</span>
-        </div>
-      )}
+      {/* Official Print Sheet for A4 paper printout */}
+      <OfficialPrintSheet
+        exams={filteredExams}
+      />
     </div>
   );
 }

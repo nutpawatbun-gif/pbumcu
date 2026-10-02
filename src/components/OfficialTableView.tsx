@@ -32,28 +32,28 @@ import { isLecturerMatch } from '../utils/teacherMatching';
 
 interface OfficialTableViewProps {
   exams: ExamItem[];
-  savedExamIds: string[];
-  onToggleSave: (id: string) => void;
-  currentUser: TeacherUser | null;
+  savedExamIds?: string[];
+  onToggleSave?: (id: string) => void;
+  currentUser?: TeacherUser | null;
   onAddNewExam?: () => void;
-  onEditExam: (exam: ExamItem) => void;
-  onOpenAlertForExam: (exam: ExamItem) => void;
+  onEditExam?: (exam: ExamItem) => void;
+  onOpenAlertForExam?: (exam: ExamItem) => void;
   onViewExamDetails?: (exam: ExamItem) => void;
-  filterYear: number | 'all';
-  setFilterYear: (y: number | 'all') => void;
-  filterStatus: 'all' | 'บรรพชิต' | 'คฤหัสถ์';
-  setFilterStatus: (s: 'all' | 'บรรพชิต' | 'คฤหัสถ์') => void;
-  filterFaculty: string;
-  setFilterFaculty: (f: string) => void;
-  filterDate: string;
-  setFilterDate: (d: string) => void;
-  distinctFaculties: string[];
-  distinctDates: string[];
-  sortKey: 'orderNo' | 'examDateISO' | 'courseCode' | 'yearLevel';
-  setSortKey: (k: 'orderNo' | 'examDateISO' | 'courseCode' | 'yearLevel') => void;
-  sortAsc: boolean;
-  setSortAsc: (asc: boolean) => void;
-  onResetFilters: () => void;
+  filterYear?: number | 'all';
+  setFilterYear?: (y: number | 'all') => void;
+  filterStatus?: 'all' | 'บรรพชิต' | 'คฤหัสถ์';
+  setFilterStatus?: (s: 'all' | 'บรรพชิต' | 'คฤหัสถ์') => void;
+  filterFaculty?: string;
+  setFilterFaculty?: (f: string) => void;
+  filterDate?: string;
+  setFilterDate?: (d: string) => void;
+  distinctFaculties?: string[];
+  distinctDates?: string[];
+  sortKey?: 'orderNo' | 'examDateISO' | 'courseCode' | 'yearLevel';
+  setSortKey?: (k: 'orderNo' | 'examDateISO' | 'courseCode' | 'yearLevel') => void;
+  sortAsc?: boolean;
+  setSortAsc?: (asc: boolean) => void;
+  onResetFilters?: () => void;
   onExportExcel?: () => void;
   onPrint?: () => void;
   isWidescreen?: boolean;
@@ -62,33 +62,61 @@ interface OfficialTableViewProps {
 
 export const OfficialTableView: React.FC<OfficialTableViewProps> = ({
   exams,
-  savedExamIds,
-  onToggleSave,
-  currentUser,
+  savedExamIds = [],
+  onToggleSave = () => {},
+  currentUser = null,
   onAddNewExam,
-  onEditExam,
-  onOpenAlertForExam,
+  onEditExam = () => {},
+  onOpenAlertForExam = () => {},
   onViewExamDetails,
-  filterYear,
-  setFilterYear,
-  filterStatus,
-  setFilterStatus,
-  filterFaculty,
-  setFilterFaculty,
-  filterDate,
-  setFilterDate,
-  distinctFaculties,
-  distinctDates,
-  sortKey,
-  setSortKey,
-  sortAsc,
-  setSortAsc,
-  onResetFilters,
+  filterYear: propFilterYear,
+  setFilterYear: propSetFilterYear,
+  filterStatus: propFilterStatus,
+  setFilterStatus: propSetFilterStatus,
+  filterFaculty: propFilterFaculty,
+  setFilterFaculty: propSetFilterFaculty,
+  filterDate: propFilterDate,
+  setFilterDate: propSetFilterDate,
+  distinctFaculties: propDistinctFaculties,
+  distinctDates: propDistinctDates,
+  sortKey: propSortKey,
+  setSortKey: propSetSortKey,
+  sortAsc: propSortAsc,
+  setSortAsc: propSetSortAsc,
+  onResetFilters: propOnResetFilters,
   onExportExcel,
   onPrint,
   isWidescreen,
   onToggleWidescreen
 }) => {
+  const [internalFilterYear, setInternalFilterYear] = useState<number | 'all'>('all');
+  const [internalFilterStatus, setInternalFilterStatus] = useState<'all' | 'บรรพชิต' | 'คฤหัสถ์'>('all');
+  const [internalFilterFaculty, setInternalFilterFaculty] = useState<string>('all');
+  const [internalFilterDate, setInternalFilterDate] = useState<string>('all');
+  const [internalSortKey, setInternalSortKey] = useState<'orderNo' | 'examDateISO' | 'courseCode' | 'yearLevel'>('orderNo');
+  const [internalSortAsc, setInternalSortAsc] = useState<boolean>(true);
+
+  const filterYear = propFilterYear !== undefined ? propFilterYear : internalFilterYear;
+  const setFilterYear = propSetFilterYear || setInternalFilterYear;
+  const filterStatus = propFilterStatus !== undefined ? propFilterStatus : internalFilterStatus;
+  const setFilterStatus = propSetFilterStatus || setInternalFilterStatus;
+  const filterFaculty = propFilterFaculty !== undefined ? propFilterFaculty : internalFilterFaculty;
+  const setFilterFaculty = propSetFilterFaculty || setInternalFilterFaculty;
+  const filterDate = propFilterDate !== undefined ? propFilterDate : internalFilterDate;
+  const setFilterDate = propSetFilterDate || setInternalFilterDate;
+  const sortKey = propSortKey !== undefined ? propSortKey : internalSortKey;
+  const setSortKey = propSetSortKey || setInternalSortKey;
+  const sortAsc = propSortAsc !== undefined ? propSortAsc : internalSortAsc;
+  const setSortAsc = propSetSortAsc || setInternalSortAsc;
+
+  const distinctFaculties = propDistinctFaculties || Array.from(new Set(exams.map(e => e.faculty).filter(Boolean)));
+  const distinctDates = propDistinctDates || Array.from(new Set(exams.map(e => e.examDateThai).filter(Boolean)));
+  const onResetFilters = propOnResetFilters || (() => {
+    setFilterYear('all');
+    setFilterStatus('all');
+    setFilterFaculty('all');
+    setFilterDate('all');
+  });
   // Mobile layout mode: 'adaptive' (compact tabular cards) or 'wide' (scrollable full table)
   const [mobileLayoutMode, setMobileLayoutMode] = useState<'adaptive' | 'wide'>('adaptive');
   

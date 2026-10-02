@@ -30,9 +30,13 @@ export interface ExamItem {
 export interface TeacherUser {
   id: string;
   name: string;
-  code: string; // Passcode / Teacher ID
+  code?: string; // Optional Passcode / Teacher ID
   faculty?: string;
-  role: 'admin' | 'teacher';
+  role: 'admin' | 'teacher' | 'staff';
+  googleEmail?: string;
+  status?: 'active' | 'pending' | 'suspended';
+  assignedScope?: string[];
+  canReadExamContent?: boolean;
 }
 
 export interface NotificationSetting {

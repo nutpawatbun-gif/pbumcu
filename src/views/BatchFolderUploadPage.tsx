@@ -29,12 +29,12 @@ import {
 import { ExamItem, TeacherUser } from '../types/exam';
 import { matchFileToExam, ScannedExamFile } from '../utils/folderExamMatcher';
 import { isLecturerMatch } from '../utils/teacherMatching';
-import { APPS_SCRIPT_SOURCE_CODE } from '../utils/appsScriptTemplate';
+import { apiClient } from '../utils/apiClient';
 
 export interface BatchFolderUploadPageProps {
   exams: ExamItem[];
   currentUser: TeacherUser | null;
-  centralDriveFolderUrl: string;
+  centralDriveFolderUrl?: string;
   webhookUrl?: string;
   onUpdateWebhookUrl?: (url: string) => void;
   onBack: () => void;
@@ -78,17 +78,6 @@ export const BatchFolderUploadPage: React.FC<BatchFolderUploadPageProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [filterConfidence, setFilterConfidence] = useState<'all' | 'exact' | 'unmatched'>('all');
 
-  // Webhook settings & status state
-  const [currentWebhookUrl, setCurrentWebhookUrl] = useState<string>(() => {
-    return webhookUrl || localStorage.getItem('mcu_exam_portal_webhook') || '';
-  });
-  const [isEditingWebhook, setIsEditingWebhook] = useState(false);
-  const [webhookSaveStatus, setWebhookSaveStatus] = useState<string | null>(null);
-  const [isTestingWebhook, setIsTestingWebhook] = useState(false);
-  const [webhookTestResult, setWebhookTestResult] = useState<{ success: boolean; message: string } | null>(null);
-  const [isGuideOpen, setIsGuideOpen] = useState(false);
-  const [copiedCode, setCopiedCode] = useState(false);
-
   // Upload results summary
   const [uploadSuccessResult, setUploadSuccessResult] = useState<UploadSuccessDetail | null>(null);
 
@@ -96,13 +85,6 @@ export const BatchFolderUploadPage: React.FC<BatchFolderUploadPageProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const isAdmin = currentUser?.role === 'admin';
-
-  // Synchronize webhookUrl prop if updated from outside
-  useEffect(() => {
-    if (webhookUrl && webhookUrl !== currentWebhookUrl) {
-      setCurrentWebhookUrl(webhookUrl);
-    }
-  }, [webhookUrl]);
 
   // Available candidate exams for the logged in user
   const selectableExams = useMemo(() => {
@@ -112,82 +94,6 @@ export const BatchFolderUploadPage: React.FC<BatchFolderUploadPageProps> = ({
     const myCourses = exams.filter(e => isLecturerMatch(e.lecturer, currentUser));
     return myCourses.length > 0 ? myCourses : exams;
   }, [exams, currentUser, isAdmin]);
-
-  // Extract folder ID from centralDriveFolderUrl
-  const effectiveFolderId = useMemo(() => {
-    let folderId = '1yc7VLWVCYtH8n1NqWymKmeu1kaNJRDBa';
-    const match = centralDriveFolderUrl.match(/folders\/([a-zA-Z0-9_-]+)/);
-    if (match && match[1]) {
-      folderId = match[1];
-    }
-    return folderId;
-  }, [centralDriveFolderUrl]);
-
-  // Save Webhook URL locally and trigger parent update
-  const handleSaveWebhook = (urlToSave?: string) => {
-    const url = (urlToSave !== undefined ? urlToSave : currentWebhookUrl).trim();
-    setCurrentWebhookUrl(url);
-    if (onUpdateWebhookUrl) {
-      onUpdateWebhookUrl(url);
-    }
-    try {
-      localStorage.setItem('mcu_exam_portal_webhook', url);
-    } catch {}
-    setIsEditingWebhook(false);
-    setWebhookSaveStatus('บันทึก Webhook URL สำเร็จแล้ว');
-    setTimeout(() => setWebhookSaveStatus(null), 3000);
-  };
-
-  // Test Webhook Connection
-  const handleTestWebhook = async () => {
-    if (!currentWebhookUrl.trim()) {
-      setWebhookTestResult({
-        success: false,
-        message: 'กรุณากรอก Google Apps Script Webhook URL ก่อนกดทดสอบ'
-      });
-      return;
-    }
-
-    setIsTestingWebhook(true);
-    setWebhookTestResult(null);
-
-    try {
-      const res = await fetch(currentWebhookUrl.trim(), {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({
-          action: 'notify',
-          message: '🔔 ทดสอบการเชื่อมต่อ Google Apps Script สำเร็จเรียบร้อย!'
-        })
-      });
-
-      if (res.ok) {
-        setWebhookTestResult({
-          success: true,
-          message: '✅ เชื่อมต่อ Google Apps Script Webhook สำเร็จ! พร้อมใช้งานส่งไฟล์เข้า Google Drive'
-        });
-      } else {
-        setWebhookTestResult({
-          success: false,
-          message: `⚠️ Google Apps Script ตอบกลับด้วยสถานะ HTTP ${res.status}`
-        });
-      }
-    } catch (e) {
-      setWebhookTestResult({
-        success: false,
-        message: `❌ เกิดข้อผิดพลาดในการเชื่อมต่อ: ${(e as Error).message} (คำแนะนำ: ตรวจสอบว่าใน Apps Script ได้เลือก Deploy เป็น Web app และตั้งค่า "ใครก็ได้ที่มีลิงก์ / Anyone" แล้วหรือยัง)`
-      });
-    } finally {
-      setIsTestingWebhook(false);
-    }
-  };
-
-  // Copy Apps Script code
-  const handleCopyCode = () => {
-    navigator.clipboard.writeText(APPS_SCRIPT_SOURCE_CODE);
-    setCopiedCode(true);
-    setTimeout(() => setCopiedCode(false), 2000);
-  };
 
   // Handle files selected from folder or file input
   const handleFilesSelected = (files: FileList | null) => {
@@ -280,21 +186,6 @@ export const BatchFolderUploadPage: React.FC<BatchFolderUploadPageProps> = ({
       return;
     }
 
-    // Check if Webhook URL is set
-    const hasWebhook = Boolean(currentWebhookUrl && currentWebhookUrl.trim());
-    if (!hasWebhook) {
-      const proceed = window.confirm(
-        '⚠️ ยังไม่ได้ระบุ Google Apps Script Webhook URL!\n\n' +
-        'หากไม่มี Webhook ระบบจะไม่สามารถส่งไฟล์ขึ้น Google Drive ได้อัตโนมัติ (จะบันทึกสถานะได้เฉพาะบนหน้าเว็บนี้เท่านั้น)\n\n' +
-        '• กดยกเลิก (Cancel) เพื่อกลับไปกรอก Webhook URL ด้านบน\n' +
-        '• หรือกดตกลง (OK) เพื่อบันทึกสถานะ "พร้อมสอบ ✔" บนเว็บเท่านั้น (โดยท่านต้องนำไฟล์ไปใส่ใน Google Drive เอง)'
-      );
-      if (!proceed) {
-        setIsEditingWebhook(true);
-        return;
-      }
-    }
-
     setIsProcessing(true);
     setUploadSuccessResult(null);
 
@@ -329,81 +220,60 @@ export const BatchFolderUploadPage: React.FC<BatchFolderUploadPageProps> = ({
 
       setCurrentUploadFileName(stdName);
 
-      let remoteFileUrl: string | undefined = undefined;
-      let targetFolderName: string | undefined = `ชั้นปีที่ ${exam.yearLevel} (${exam.status})`;
+      try {
+        const base64Content = await fileToBase64(match.file);
 
-      if (hasWebhook) {
-        try {
-          const base64Content = await fileToBase64(match.file);
+        // Upload securely via API Client (Server validates magic bytes, size <= 25MB, writes to private storage & logs audit)
+        const uploadRes = await apiClient.uploadExam(exam.id, {
+          fileName: stdName,
+          fileMime: match.file.type || 'application/pdf',
+          fileBase64: base64Content,
+          notes: `Batch folder upload by ${teacherName}`
+        });
 
-          const payload = {
-            action: 'upload_exam',
-            folderId: effectiveFolderId,
-            yearLevel: exam.yearLevel,
-            studentStatus: exam.status || 'บรรพชิต',
-            status: exam.status || 'บรรพชิต',
-            major: exam.major || exam.faculty || '',
-            faculty: exam.faculty || '',
-            teacherName: teacherName,
-            lecturer: teacherName,
-            courseCode: exam.courseCode,
+        if (uploadRes && uploadRes.success) {
+          successList.push({
             courseName: exam.courseName,
+            courseCode: exam.courseCode,
             fileName: stdName,
-            fileMime: match.file.type || 'application/pdf',
-            mimeType: match.file.type || 'application/pdf',
-            fileData: base64Content,
-            fileContent: base64Content
-          };
-
-          const resp = await fetch(currentWebhookUrl.trim(), {
-            method: 'POST',
-            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-            body: JSON.stringify(payload)
+            fileUrl: uploadRes.version?.driveFileId,
+            folderName: `ชั้นปีที่ ${exam.yearLevel} (${exam.status})`
           });
 
-          const res = await resp.json();
-
-          if ((res.status === 'success' || res.success) && res.fileUrl) {
-            remoteFileUrl = res.fileUrl;
-            targetFolderName = res.folderName || targetFolderName;
-            successList.push({
-              courseName: exam.courseName,
-              courseCode: exam.courseCode,
-              fileName: stdName,
-              fileUrl: res.fileUrl,
-              folderName: targetFolderName
-            });
-          } else if (res.status === 'unknown_action') {
-            throw new Error('Google Apps Script ไม่รู้จักคำสั่ง upload_exam (กรุณาคัดลอกและอัปเดตโค้ด Apps Script ใหม่)');
-          } else {
-            throw new Error(res.message || 'Apps Script ตอบกลับด้วยสถานะไม่สำเร็จ');
-          }
-        } catch (err) {
-          const errorMsg = (err as Error).message || 'ไม่สามารถส่งเข้า Google Drive ได้';
+          // ONLY mark as updated/submitted if server upload truly succeeded!
+          updates.push({
+            examId: exam.id,
+            fileUrl: uploadRes.version?.driveFileId || '',
+            uploadedDate: uploadDateStr,
+            fileName: stdName
+          });
+        } else {
           failedList.push({
             courseName: exam.courseName,
             fileName: stdName,
-            error: errorMsg
+            error: uploadRes?.message || 'การอัปโหลดไม่สำเร็จจากเซิร์ฟเวอร์'
           });
         }
+      } catch (err: any) {
+        const errorMsg = err?.message || 'ไม่สามารถส่งไฟล์เข้าสู่ระบบได้ (การเชื่อมต่อล้มเหลว)';
+        failedList.push({
+          courseName: exam.courseName,
+          fileName: stdName,
+          error: errorMsg
+        });
       }
-
-      updates.push({
-        examId: exam.id,
-        fileUrl: remoteFileUrl || exam.examLink || centralDriveFolderUrl,
-        uploadedDate: uploadDateStr,
-        fileName: stdName
-      });
     }
 
-    onBatchUploadSuccess(updates);
+    if (updates.length > 0) {
+      onBatchUploadSuccess(updates);
+    }
 
     setIsProcessing(false);
     setCurrentUploadIndex(0);
     setCurrentUploadFileName('');
 
     setUploadSuccessResult({
-      total: updates.length,
+      total: validMatches.length,
       driveSuccessCount: successList.length,
       driveFailCount: failedList.length,
       successList,
@@ -471,7 +341,7 @@ export const BatchFolderUploadPage: React.FC<BatchFolderUploadPageProps> = ({
         )}
       </div>
 
-      {/* 2. Google Drive Destination & Webhook Status Card */}
+      {/* 2. Google Drive Destination & Security Status Card */}
       <div className="bg-white rounded-3xl border border-[#F8D7E3] shadow-xs overflow-hidden">
         <div className="p-4 sm:p-5 bg-gradient-to-r from-[#FFF0F5] via-[#FFF9FB] to-[#FFF0F5] border-b border-[#F8D7E3]">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -479,167 +349,49 @@ export const BatchFolderUploadPage: React.FC<BatchFolderUploadPageProps> = ({
               <div className="flex items-center gap-2">
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#9D174D]/10 text-[#9D174D]">
                   <Folder className="w-3.5 h-3.5" />
-                  <span>Google Drive โฟลเดอร์รับข้อสอบปลายทาง</span>
+                  <span>ระบบจัดเก็บข้อสอบส่วนกลาง (Google Drive / Secure Server)</span>
                 </span>
                 <span className="text-xs text-slate-500 font-mono hidden sm:inline">
-                  (ID: {effectiveFolderId})
+                  (Private University Storage)
                 </span>
               </div>
               <h2 className="text-base sm:text-lg font-bold text-slate-900 flex items-center gap-2">
                 <span>วิทยาลัยสงฆ์พ่อขุนผาเมือง</span>
                 <span className="text-xs font-normal text-slate-500">
-                  (จัดเก็บแยก 8 โฟลเดอร์: ชั้นปี 1-4 บรรพชิต & คฤหัสถ์)
+                  (จัดเก็บแยกตามชั้นปีและสถานะนิสิต พร้อมประวัติเวอร์ชันและบันทึกตรวจสอบ)
                 </span>
               </h2>
             </div>
 
             <div className="flex items-center gap-2">
-              <a
-                href={centralDriveFolderUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white hover:bg-slate-50 text-slate-700 hover:text-[#9D174D] border border-slate-200 hover:border-[#F8D7E3] text-xs font-bold transition shadow-2xs"
-              >
-                <ExternalLink className="w-3.5 h-3.5 text-[#9D174D]" />
-                <span>📂 เปิดโฟลเดอร์ Google Drive</span>
-              </a>
+              <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-semibold">
+                <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                <span>ความปลอดภัยระดับองค์กร (RBAC & Antivirus)</span>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Webhook Connection & Configuration Panel */}
-        <div className="p-4 sm:p-5 space-y-3">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="flex items-center gap-2.5">
-              <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
-                currentWebhookUrl.trim()
-                  ? 'bg-emerald-50 text-emerald-600 border border-emerald-200'
-                  : 'bg-amber-50 text-amber-600 border border-amber-200'
-              }`}>
-                {currentWebhookUrl.trim() ? (
-                  <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                ) : (
-                  <AlertTriangle className="w-4 h-4 text-amber-600" />
-                )}
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className={`text-xs font-bold ${
-                    currentWebhookUrl.trim() ? 'text-emerald-800' : 'text-amber-800'
-                  }`}>
-                    {currentWebhookUrl.trim()
-                      ? '✅ เชื่อมต่อ Google Apps Script Webhook พร้อมอัปโหลดไฟล์ตรงเข้า Drive'
-                      : '⚠️ ยังไม่ได้ระบุ Google Apps Script Webhook (ระบบจะไม่สามารถส่งไฟล์เข้า Google Drive ได้อัตโนมัติ)'}
-                  </span>
-                </div>
-                <p className="text-[11px] text-slate-500 mt-0.5">
-                  {currentWebhookUrl.trim()
-                    ? `Webhook: ${currentWebhookUrl.substring(0, 45)}...`
-                    : 'กรุณากรอก Webhook URL เพื่อให้ระบบส่งไฟล์เข้าโฟลเดอร์ชั้นปีบน Google Drive ได้โดยตรง'}
-                </p>
-              </div>
+        {/* Security & Validation Notice */}
+        <div className="p-4 sm:p-5 bg-slate-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-2.5 text-slate-600">
+            <div className="w-8 h-8 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-center shrink-0">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
             </div>
-
-            <div className="flex items-center gap-2">
-              {currentWebhookUrl.trim() && (
-                <button
-                  type="button"
-                  onClick={handleTestWebhook}
-                  disabled={isTestingWebhook}
-                  className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-emerald-50 text-slate-700 hover:text-emerald-700 border border-slate-200 text-xs font-semibold transition cursor-pointer"
-                >
-                  {isTestingWebhook ? 'กำลังทดสอบ...' : '⚡ ทดสอบเชื่อมต่อ'}
-                </button>
-              )}
-              <button
-                type="button"
-                onClick={() => setIsEditingWebhook(!isEditingWebhook)}
-                className="px-3 py-1.5 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs font-semibold transition cursor-pointer shadow-2xs"
-              >
-                {isEditingWebhook ? 'ปิดช่องแก้ไข' : currentWebhookUrl.trim() ? 'เปลี่ยน Webhook URL' : 'กรอก Webhook URL'}
-              </button>
-              <button
-                type="button"
-                onClick={() => setIsGuideOpen(!isGuideOpen)}
-                className="px-3 py-1.5 rounded-xl bg-[#FFF0F5] hover:bg-[#FCE7F3] text-[#9D174D] border border-[#F8D7E3] text-xs font-semibold transition cursor-pointer flex items-center gap-1"
-              >
-                <Info className="w-3.5 h-3.5" />
-                <span>วิธีติดตั้ง</span>
-                {isGuideOpen ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-              </button>
+            <div>
+              <p className="font-semibold text-slate-800">
+                ระบบคัดกรองไฟล์ฝั่งเซิร์ฟเวอร์อัตโนมัติ (Server-Side Magic Bytes & Size Limits)
+              </p>
+              <p className="text-[11px] text-slate-500">
+                รองรับไฟล์ PDF (%PDF-) และ Word (.docx) ขนาดสูงสุด 25MB ป้องกันชื่อไฟล์และ Path traversal
+              </p>
             </div>
           </div>
 
-          {/* Inline Webhook Input Field */}
-          {isEditingWebhook && (
-            <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 space-y-2 animate-in fade-in">
-              <label className="block text-xs font-bold text-slate-700">
-                Google Apps Script Web App URL:
-              </label>
-              <div className="flex flex-col sm:flex-row gap-2">
-                <input
-                  type="url"
-                  value={currentWebhookUrl}
-                  onChange={(e) => setCurrentWebhookUrl(e.target.value)}
-                  placeholder="https://script.google.com/macros/s/.../exec"
-                  className="flex-1 px-3 py-2 text-xs bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-1 focus:ring-[#9D174D] font-mono text-slate-800"
-                />
-                <button
-                  type="button"
-                  onClick={() => handleSaveWebhook()}
-                  className="px-4 py-2 bg-[#9D174D] hover:bg-[#831843] text-white font-bold text-xs rounded-xl shadow-xs transition cursor-pointer shrink-0"
-                >
-                  บันทึก Webhook
-                </button>
-              </div>
-              <p className="text-[11px] text-slate-500">
-                นำ Web App URL ที่ได้จากการ Deploy ใน Google Apps Script (เลือกสิทธิ์เป็น Everyone/Anyone) มาใส่ที่นี่
-              </p>
-            </div>
-          )}
-
-          {webhookSaveStatus && (
-            <div className="p-2.5 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-semibold">
-              {webhookSaveStatus}
-            </div>
-          )}
-
-          {webhookTestResult && (
-            <div className={`p-3 rounded-xl text-xs font-medium ${
-              webhookTestResult.success 
-                ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' 
-                : 'bg-rose-50 text-rose-800 border border-rose-200'
-            }`}>
-              {webhookTestResult.message}
-            </div>
-          )}
-
-          {/* Expandable Apps Script Guide */}
-          {isGuideOpen && (
-            <div className="p-4 bg-[#FFF8FA] rounded-2xl border border-[#F8D7E3] space-y-3 animate-in fade-in text-xs text-slate-700">
-              <div className="flex items-center justify-between">
-                <h4 className="font-bold text-[#701A4B] flex items-center gap-1.5">
-                  <Sparkles className="w-4 h-4 text-[#9D174D]" />
-                  <span>วิธีตั้งค่า Google Apps Script เพื่อส่งไฟล์เข้า Drive (3 ขั้นตอน)</span>
-                </h4>
-                <button
-                  type="button"
-                  onClick={handleCopyCode}
-                  className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#9D174D] hover:bg-[#831843] text-white font-semibold text-xs rounded-lg transition"
-                >
-                  {copiedCode ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                  <span>{copiedCode ? 'คัดลอกโค้ดแล้ว!' : 'คัดลอกโค้ด Apps Script'}</span>
-                </button>
-              </div>
-
-              <ol className="list-decimal list-inside space-y-1.5 text-slate-600 leading-relaxed">
-                <li>เปิด Google Spreadsheet ของท่าน $\rightarrow$ ไปที่เมนู <strong>ส่วนขยาย (Extensions)</strong> $\rightarrow$ <strong>Apps Script</strong></li>
-                <li>ลบโค้ดเดิมออกทั้งหมด แล้วนำโค้ดที่กด <strong>[คัดลอกโค้ด Apps Script]</strong> ด้านบนไปวางแทนที่</li>
-                <li>ที่แถบฟังก์ชันด้านบน เลือกฟังก์ชัน <code>initialSetupAndAuthorize</code> แล้วกดปุ่ม <strong>▶️ เรียกใช้ (Run)</strong> เพื่อกดยืนยันสิทธิ์เข้าถึง Google Drive</li>
-                <li>กดปุ่ม <strong>การทำให้ใช้งานได้ (Deploy)</strong> $\rightarrow$ <strong>การทำให้ใช้งานได้รายการใหม่ (New deployment)</strong> $\rightarrow$ เลือกประเภท <strong>เว็บแอป (Web app)</strong> $\rightarrow$ ตั้งค่า "ผู้มีสิทธิ์เข้าถึง: <strong>ทุกคน (Anyone)</strong>" $\rightarrow$ คัดลอก Webhook URL มาวางในระบบนี้</li>
-              </ol>
-            </div>
-          )}
+          <div className="flex items-center gap-2 text-[11px] text-slate-500 shrink-0">
+            <span className="px-2 py-1 bg-white border border-slate-200 rounded-lg">🔒 ปลายทาง: Private Google Drive</span>
+            <span className="px-2 py-1 bg-white border border-slate-200 rounded-lg">🛡️ Zero Anyone-With-Link</span>
+          </div>
         </div>
       </div>
 
