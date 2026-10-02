@@ -28,7 +28,8 @@ import {
   Save,
   Lock,
   Files,
-  Eye
+  Eye,
+  RefreshCw
 } from 'lucide-react';
 import { ExamItem, TeacherUser } from '../types/exam';
 import { formatLineNotifyMessage, sendLineNotifyNotification } from '../utils/notifications';
@@ -59,6 +60,9 @@ interface TeacherPortalProps {
   onBatchUploadSuccess?: (updates: { examId: string; fileUrl?: string; uploadedDate: string; fileName: string }[]) => void;
   onViewExamDetails?: (exam: ExamItem) => void;
   onNavigateToFolderUpload?: () => void;
+  onSyncDrive?: () => void;
+  isSyncingDrive?: boolean;
+  onExportBackup?: () => void;
 }
 
 export const TeacherPortal: React.FC<TeacherPortalProps> = ({
@@ -82,7 +86,10 @@ export const TeacherPortal: React.FC<TeacherPortalProps> = ({
   onToggleSubmissionStatus,
   onUploadExamSuccess,
   onBatchUploadSuccess,
-  onNavigateToFolderUpload
+  onNavigateToFolderUpload,
+  onSyncDrive,
+  isSyncingDrive,
+  onExportBackup
 }) => {
   const isAdmin = currentUser?.role === 'admin';
   const [filterMyCoursesOnly, setFilterMyCoursesOnly] = useState(currentUser ? currentUser.role !== 'admin' : true);
@@ -339,7 +346,20 @@ export const TeacherPortal: React.FC<TeacherPortalProps> = ({
           </div>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-2 flex-wrap shrink-0">
+          {onSyncDrive && (
+            <button
+              type="button"
+              onClick={onSyncDrive}
+              disabled={isSyncingDrive}
+              className="px-3.5 py-2 bg-sky-600 hover:bg-sky-700 text-white font-semibold text-xs rounded-xl shadow-2xs transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+              title="สแกนและดึงสถานะวิชาที่ส่งข้อสอบแล้วจาก Google Drive อัตโนมัติ"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${isSyncingDrive ? 'animate-spin' : ''}`} />
+              <span>{isSyncingDrive ? 'กำลังซิงค์...' : '🔄 ซิงค์จาก Drive'}</span>
+            </button>
+          )}
+
           <a
             href={effectiveCentralDriveUrl}
             target="_blank"
@@ -350,6 +370,32 @@ export const TeacherPortal: React.FC<TeacherPortalProps> = ({
             <span>เปิด Google Drive กลาง</span>
             <ExternalLink className="w-3 h-3 opacity-80" />
           </a>
+
+          {onExportBackup && (
+            <button
+              type="button"
+              onClick={onExportBackup}
+              className="px-3 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 font-semibold text-xs rounded-xl shadow-2xs transition flex items-center gap-1 cursor-pointer"
+              title="ดาวน์โหลดไฟล์สำรองข้อมูล (JSON) สำหรับย้ายไปใช้งานในเบราว์เซอร์อื่น"
+            >
+              <Download className="w-3.5 h-3.5 text-slate-600" />
+              <span>สำรองข้อมูล JSON</span>
+            </button>
+          )}
+
+          <label
+            className="px-3 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 font-semibold text-xs rounded-xl shadow-2xs transition flex items-center gap-1 cursor-pointer"
+            title="นำเข้าไฟล์สำรองข้อมูล (JSON) จากเบราว์เซอร์อื่น"
+          >
+            <Upload className="w-3.5 h-3.5 text-slate-600" />
+            <span>นำเข้า JSON</span>
+            <input
+              type="file"
+              accept=".json"
+              onChange={onImportJSON}
+              className="hidden"
+            />
+          </label>
 
           {isAdmin && (
             <>

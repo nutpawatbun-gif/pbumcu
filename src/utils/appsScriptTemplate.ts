@@ -67,27 +67,89 @@ function initialSetupAndAuthorize() {
 }
 
 /**
- * 1. Web App GET: ส่งข้อมูลตารางสอบทั้งหมดเป็น JSON ให้กับหน้าเว็บ
+ * Helper: สแกนไฟล์ข้อสอบทั้งหมดในโฟลเดอร์ Google Drive รับข้อสอบ
+ */
+function scanGoogleDriveExamFiles(parentFolderId) {
+  const folderId = parentFolderId || "1yc7VLWVCYtH8n1NqWymKmeu1kaNJRDBa";
+  const filesList = [];
+  try {
+    const parentFolder = DriveApp.getFolderById(folderId);
+    
+    // สแกนโฟลเดอร์ย่อย (เช่น ชั้นปีที่ 1 (บรรพชิต), ชั้นปีที่ 1 (คฤหัสถ์))
+    const subfolders = parentFolder.getFolders();
+    while (subfolders.hasNext()) {
+      const sub = subfolders.next();
+      const files = sub.getFiles();
+      while (files.hasNext()) {
+        const file = files.next();
+        filesList.push({
+          id: file.getId(),
+          name: file.getName(),
+          url: file.getUrl(),
+          downloadUrl: file.getDownloadUrl(),
+          folderName: sub.getName(),
+          folderId: sub.getId(),
+          size: file.getSize(),
+          updated: file.getLastUpdated().toISOString()
+        });
+      }
+    }
+
+    // สแกนโฟลเดอร์หลักด้วย
+    const rootFiles = parentFolder.getFiles();
+    while (rootFiles.hasNext()) {
+      const rFile = rootFiles.next();
+      filesList.push({
+        id: rFile.getId(),
+        name: rFile.getName(),
+        url: rFile.getUrl(),
+        downloadUrl: rFile.getDownloadUrl(),
+        folderName: parentFolder.getName(),
+        folderId: parentFolder.getId(),
+        size: rFile.getSize(),
+        updated: rFile.getLastUpdated().toISOString()
+      });
+    }
+  } catch (err) {
+    Logger.log("Drive scan error: " + err.toString());
+  }
+  return filesList;
+}
+
+/**
+ * 1. Web App GET: ส่งข้อมูลตารางสอบ และสแกนไฟล์ข้อสอบใน Google Drive แบบเรียลไทม์
  */
 function doGet(e) {
   try {
-    const sheet = getOrCreateSheet();
-    const data = sheet.getDataRange().getValues();
-    const headers = data[0];
-    const rows = data.slice(1);
-    
-    const exams = rows.map((row, index) => {
-      const obj = { id: "exam-" + (index + 1) };
-      headers.forEach((header, colIdx) => {
-        obj[header] = row[colIdx];
-      });
-      return obj;
-    });
+    const folderId = (e && e.parameter && e.parameter.folderId) ? e.parameter.folderId : "1yc7VLWVCYtH8n1NqWymKmeu1kaNJRDBa";
+    const driveFiles = scanGoogleDriveExamFiles(folderId);
+
+    // ดึงข้อมูล Sheet (ถ้ามี)
+    let exams = [];
+    try {
+      const sheet = getOrCreateSheet();
+      const data = sheet.getDataRange().getValues();
+      if (data.length > 1) {
+        const headers = data[0];
+        const rows = data.slice(1);
+        exams = rows.map((row, index) => {
+          const obj = { id: "exam-" + (index + 1) };
+          headers.forEach((header, colIdx) => {
+            obj[header] = row[colIdx];
+          });
+          return obj;
+        });
+      }
+    } catch (sheetErr) {
+      Logger.log("Sheet read error: " + sheetErr.toString());
+    }
 
     return ContentService.createTextOutput(JSON.stringify({
       status: "success",
       count: exams.length,
-      data: exams
+      data: exams,
+      driveFilesCount: driveFiles.length,
+      driveFiles: driveFiles
     })).setMimeType(ContentService.MimeType.JSON);
   } catch (error) {
     return ContentService.createTextOutput(JSON.stringify({
@@ -104,6 +166,18 @@ function doPost(e) {
   try {
     const postData = JSON.parse(e.postData.contents);
     const action = postData.action || "notify";
+
+    // กรณีที่ 0: สแกนไฟล์ข้อสอบจาก Google Drive (สำหรับซิงค์สถานะข้ามเบราว์เซอร์)
+    if (action === "get_drive_status" || action === "sync_from_drive") {
+      const parentFolderId = postData.folderId || "1yc7VLWVCYtH8n1NqWymKmeu1kaNJRDBa";
+      const driveFiles = scanGoogleDriveExamFiles(parentFolderId);
+      return ContentService.createTextOutput(JSON.stringify({
+        status: "success",
+        action: action,
+        driveFilesCount: driveFiles.length,
+        driveFiles: driveFiles
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
 
     // กรณีที่ 1: สั่งส่ง LINE Notify
     if (action === "notify" || postData.message) {

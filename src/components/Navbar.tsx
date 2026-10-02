@@ -20,7 +20,10 @@ import {
   ChevronRight,
   SlidersHorizontal,
   LayoutDashboard,
-  FolderUp
+  FolderUp,
+  RefreshCw,
+  Download,
+  Upload
 } from 'lucide-react';
 import { TeacherUser } from '../types/exam';
 
@@ -39,6 +42,10 @@ interface NavbarProps {
   isWidescreen?: boolean;
   onToggleWidescreen?: () => void;
   onNavigateToFolderUpload?: () => void;
+  onSyncDrive?: () => void;
+  isSyncingDrive?: boolean;
+  onExportBackup?: () => void;
+  onImportBackup?: (file: File) => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -55,9 +62,14 @@ export const Navbar: React.FC<NavbarProps> = ({
   onExportExcel,
   isWidescreen,
   onToggleWidescreen,
-  onNavigateToFolderUpload
+  onNavigateToFolderUpload,
+  onSyncDrive,
+  isSyncingDrive,
+  onExportBackup,
+  onImportBackup
 }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const backupFileInputRef = React.useRef<HTMLInputElement>(null);
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
 
   const handleTabSelect = (tab: NavbarProps['currentTab']) => {
@@ -155,6 +167,18 @@ export const Navbar: React.FC<NavbarProps> = ({
               >
                 <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
                 <span>ส่งออก Excel</span>
+              </button>
+            )}
+
+            {onSyncDrive && (
+              <button
+                onClick={onSyncDrive}
+                disabled={isSyncingDrive}
+                title="ซิงค์สถานะข้อสอบจาก Google Drive อัตโนมัติ"
+                className="flex items-center gap-1.5 text-xs font-semibold text-sky-800 bg-sky-50 hover:bg-sky-100 px-3 py-1.5 rounded-xl border border-sky-200 transition shadow-2xs cursor-pointer disabled:opacity-50"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 text-sky-600 ${isSyncingDrive ? 'animate-spin' : ''}`} />
+                <span className="hidden xl:inline">{isSyncingDrive ? 'กำลังซิงค์...' : 'ซิงค์ Drive'}</span>
               </button>
             )}
 
@@ -505,6 +529,72 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <ChevronRight className="w-4 h-4 text-[#854D67]/50" />
               </button>
             )}
+
+            {/* Category: การเชื่อมต่อ Cloud & สำรองข้อมูล */}
+            <div className="space-y-1">
+              <p className="text-[10px] font-bold text-[#854D67] uppercase tracking-wider px-1">
+                คลาวด์และสำรองข้อมูลข้ามเครื่อง
+              </p>
+
+              {onSyncDrive && (
+                <button
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    onSyncDrive();
+                  }}
+                  disabled={isSyncingDrive}
+                  className="w-full flex items-center justify-between p-2.5 rounded-xl text-xs font-semibold bg-sky-50 text-sky-800 border border-sky-200 transition"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <RefreshCw className={`w-4 h-4 text-sky-600 ${isSyncingDrive ? 'animate-spin' : ''}`} />
+                    <span>{isSyncingDrive ? 'กำลังซิงค์ Google Drive...' : '🔄 ซิงค์สถานะจาก Google Drive'}</span>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-sky-400" />
+                </button>
+              )}
+
+              <div className="grid grid-cols-2 gap-2 pt-1">
+                {onExportBackup && (
+                  <button
+                    onClick={() => {
+                      setIsMobileMenuOpen(false);
+                      onExportBackup();
+                    }}
+                    className="flex items-center justify-center gap-1.5 p-2 rounded-xl text-xs font-semibold bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 transition"
+                  >
+                    <Download className="w-3.5 h-3.5 text-slate-600" />
+                    <span>สำรอง JSON</span>
+                  </button>
+                )}
+
+                {onImportBackup && (
+                  <button
+                    onClick={() => {
+                      setIsMobileMenuOpen(false);
+                      backupFileInputRef.current?.click();
+                    }}
+                    className="flex items-center justify-center gap-1.5 p-2 rounded-xl text-xs font-semibold bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 transition"
+                  >
+                    <Upload className="w-3.5 h-3.5 text-slate-600" />
+                    <span>นำเข้า JSON</span>
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Hidden file input for JSON backup import */}
+            <input
+              type="file"
+              ref={backupFileInputRef}
+              accept=".json"
+              onChange={(e) => {
+                if (e.target.files && e.target.files[0] && onImportBackup) {
+                  onImportBackup(e.target.files[0]);
+                  e.target.value = '';
+                }
+              }}
+              className="hidden"
+            />
 
             {/* Category 1: ตารางและการสอบ */}
             <div className="space-y-1">

@@ -36,6 +36,9 @@ import {
 import { exportExamsToExcel } from './utils/excelExport';
 import { isLecturerMatch } from './utils/teacherMatching';
 import { OfficialPrintSheet } from './components/OfficialPrintSheet';
+import { syncExamsWithGoogleDrive } from './utils/cloudSync';
+import { exportBackupJson, readBackupFile } from './utils/dataBackup';
+import { CheckCircle2, AlertCircle } from 'lucide-react';
 
 const STORAGE_KEY_EXAMS = 'mcu_exam_portal_data_v2';
 const STORAGE_KEY_SAVED = 'mcu_exam_portal_saved_v2';
@@ -123,6 +126,9 @@ export default function App() {
       localStorage.setItem('mcu_exam_portal_drive_folder', url);
     } catch {}
   };
+
+  const [isSyncingDrive, setIsSyncingDrive] = useState(false);
+  const [syncToast, setSyncToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   const handleToggleExamSubmission = (id: string) => {
     const targetExam = exams.find(e => e.id === id);
@@ -606,24 +612,96 @@ export default function App() {
     URL.revokeObjectURL(url);
   };
 
+  const handleSyncWithGoogleDrive = async (silent: boolean = false) => {
+    const targetWebhook = settings.webhookUrl || localStorage.getItem('mcu_exam_portal_webhook') || '';
+    if (!targetWebhook.trim()) {
+      if (!silent) {
+        alert('⚠️ ยังไม่ได้ระบุ Google Apps Script Webhook URL ในระบบ\n\nกรุณาไปที่แท็บ "Apps Script & Cloud" หรือหน้า "อัปโหลดโฟลเดอร์" เพื่อกรอก Webhook URL ก่อนกดซิงค์ครับ');
+      }
+      return;
+    }
+
+    setIsSyncingDrive(true);
+    try {
+      const res = await syncExamsWithGoogleDrive(targetWebhook, exams, centralDriveFolderUrl);
+      if (res.success) {
+        if (res.syncedCount > 0) {
+          setExams(res.updatedExams);
+          setSyncToast({
+            type: 'success',
+            message: `🎉 ซิงค์สำเร็จ! พบข้อสอบใน Google Drive ${res.driveFilesCount} ไฟล์ (ปรับสถานะพร้อมสอบ ${res.syncedCount} รายวิชา)`
+          });
+        } else {
+          if (!silent) {
+            setSyncToast({
+              type: 'success',
+              message: res.message
+            });
+          }
+        }
+      } else {
+        if (!silent) {
+          setSyncToast({
+            type: 'error',
+            message: res.message
+          });
+        }
+      }
+    } catch (err) {
+      if (!silent) {
+        setSyncToast({
+          type: 'error',
+          message: `เกิดข้อผิดพลาด: ${(err as Error).message}`
+        });
+      }
+    } finally {
+      setIsSyncingDrive(false);
+      setTimeout(() => setSyncToast(null), 5000);
+    }
+  };
+
+  // Auto-sync with Google Drive once on mount if webhookUrl is available
+  useEffect(() => {
+    const targetWebhook = settings.webhookUrl || localStorage.getItem('mcu_exam_portal_webhook') || '';
+    if (targetWebhook.trim()) {
+      handleSyncWithGoogleDrive(true);
+    }
+  }, []);
+
+  const handleExportBackup = () => {
+    exportBackupJson(exams, settings, savedExamIds, centralDriveFolderUrl);
+    setSyncToast({
+      type: 'success',
+      message: '💾 ส่งออกไฟล์สำรองข้อมูล (JSON) สำเร็จ สามารถนำไปใช้งานในเบราว์เซอร์อื่นได้ทันที'
+    });
+    setTimeout(() => setSyncToast(null), 4000);
+  };
+
+  const handleImportBackupFile = async (file: File) => {
+    try {
+      const data = await readBackupFile(file);
+      if (data.exams && Array.isArray(data.exams)) {
+        setExams(data.exams);
+        if (data.settings) setSettings(data.settings);
+        if (data.savedExamIds && Array.isArray(data.savedExamIds)) setSavedExamIds(data.savedExamIds);
+        if (data.centralDriveFolderUrl) setCentralDriveFolderUrl(data.centralDriveFolderUrl);
+
+        setSyncToast({
+          type: 'success',
+          message: `📥 กู้คืนข้อมูลสำเร็จ! นำเข้ารายวิชา ${data.metrics.totalExams} วิชา (สถานะพร้อมสอบ ${data.metrics.submittedExams} วิชา)`
+        });
+        setTimeout(() => setSyncToast(null), 5000);
+      }
+    } catch (err) {
+      alert(`⚠️ เกิดข้อผิดพลาดในการนำเข้าไฟล์สำรอง: ${(err as Error).message}`);
+    }
+  };
+
   const handleImportJSON = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      try {
-        const parsed = JSON.parse(event.target?.result as string);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          setExams(parsed);
-          alert(`นำเข้าข้อมูลตารางสอบ ${parsed.length} รายการสำเร็จ!`);
-        } else {
-          alert('รูปแบบไฟล์ JSON ไม่ถูกต้อง');
-        }
-      } catch (err) {
-        alert('เกิดข้อผิดพลาดในการอ่านไฟล์: ' + (err as Error).message);
-      }
-    };
-    reader.readAsText(file);
+    handleImportBackupFile(file);
+    e.target.value = '';
   };
 
   const handlePrint = (customScope?: any) => {
@@ -732,6 +810,10 @@ export default function App() {
         isWidescreen={isWidescreen}
         onToggleWidescreen={handleToggleWidescreen}
         onNavigateToFolderUpload={navigateToFolderUpload}
+        onSyncDrive={() => handleSyncWithGoogleDrive(false)}
+        isSyncingDrive={isSyncingDrive}
+        onExportBackup={handleExportBackup}
+        onImportBackup={handleImportBackupFile}
       />
 
       {/* Main Container */}
@@ -964,6 +1046,9 @@ export default function App() {
                   onBatchUploadSuccess={handleBatchUploadSuccess}
                   onViewExamDetails={(exam) => navigateToCourseDetail(exam)}
                   onNavigateToFolderUpload={navigateToFolderUpload}
+                  onSyncDrive={() => handleSyncWithGoogleDrive(false)}
+                  isSyncingDrive={isSyncingDrive}
+                  onExportBackup={handleExportBackup}
                 />
               ) : (
                 <div className="max-w-md mx-auto my-12 p-8 bg-white rounded-2xl border border-[#F8D7E3] text-center space-y-4 shadow-xs">
@@ -1106,6 +1191,21 @@ export default function App() {
           signatoryTeacher={printSignatoryTeacher}
         />
       </div>
+      {/* Toast Notification */}
+      {syncToast && (
+        <div className={`fixed bottom-20 md:bottom-6 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl shadow-xl text-sm font-semibold flex items-center gap-2.5 animate-in fade-in slide-in-from-bottom-3 duration-200 border ${
+          syncToast.type === 'success' 
+            ? 'bg-slate-900/95 text-white border-emerald-500/40 shadow-emerald-950/20' 
+            : 'bg-rose-950/95 text-white border-rose-500/40 shadow-rose-950/20'
+        }`}>
+          {syncToast.type === 'success' ? (
+            <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
+          ) : (
+            <AlertCircle className="w-5 h-5 text-rose-400 shrink-0" />
+          )}
+          <span>{syncToast.message}</span>
+        </div>
+      )}
     </div>
   );
 }
