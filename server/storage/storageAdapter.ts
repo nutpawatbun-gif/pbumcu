@@ -96,6 +96,18 @@ export class FileStorageAdapter implements StorageAdapter {
     return {
       accounts: [
         {
+          accountId: 'usr_superadmin_nutpawat',
+          googleEmail: 'nutpawatbun@gmail.com',
+          googleSub: 'google_sub_nutpawat',
+          fullName: 'Nutpawat Bun (Super Admin)',
+          role: 'admin' as const,
+          status: 'active' as const,
+          assignedScope: ['all'],
+          canReadExamContent: true,
+          createdAt: new Date('2026-01-01').toISOString(),
+          lastLoginAt: new Date().toISOString()
+        },
+        {
           accountId: 'usr_admin_01',
           googleEmail: 'admin@mcu.ac.th',
           googleSub: 'google_sub_admin_01',

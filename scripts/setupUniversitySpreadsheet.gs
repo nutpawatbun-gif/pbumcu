@@ -34,6 +34,10 @@ function setupUniversitySpreadsheet() {
       ],
       sampleRows: [
         [
+          "acc-superadmin-01", "nutpawatbun@gmail.com", "Nutpawat Bun (Super Admin)", 
+          "admin", "active", "all", true, new Date().toISOString(), new Date().toISOString()
+        ],
+        [
           "acc-admin-01", "admin@mcu.ac.th", "ผู้ดูแลระบบกลาง วิทยาลัยสงฆ์พ่อขุนผาเมือง", 
           "admin", "active", "all", true, new Date().toISOString(), new Date().toISOString()
         ],

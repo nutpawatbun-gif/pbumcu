@@ -1,0 +1,1584 @@
+{
+  "accounts": [
+    {
+      "accountId": "usr_superadmin_nutpawat",
+      "googleEmail": "nutpawatbun@gmail.com",
+      "googleSub": "google_sub_nutpawat",
+      "fullName": "Nutpawat Bun (Super Admin)",
+      "role": "admin",
+      "status": "active",
+      "assignedScope": [
+        "all"
+      ],
+      "canReadExamContent": true,
+      "createdAt": "2026-01-01T00:00:00.000Z",
+      "lastLoginAt": "2026-10-03T07:39:50.137Z"
+    },
+    {
+      "accountId": "usr_admin_01",
+      "googleEmail": "admin@mcu.ac.th",
+      "googleSub": "google_sub_admin_01",
+      "fullName": "ผู้ดูแลระบบส่วนกลาง (Admin)",
+      "role": "admin",
+      "status": "active",
+      "assignedScope": [
+        "all"
+      ],
+      "canReadExamContent": true,
+      "createdAt": "2026-01-01T00:00:00.000Z",
+      "lastLoginAt": "2026-10-03T07:36:09.036Z"
+    },
+    {
+      "accountId": "usr_staff_01",
+      "googleEmail": "staff.exam@mcu.ac.th",
+      "googleSub": "google_sub_staff_01",
+      "fullName": "เจ้าหน้าที่ฝ่ายจัดพิมพ์ข้อสอบ",
+      "role": "staff",
+      "status": "active",
+      "assignedScope": [
+        "all"
+      ],
+      "canReadExamContent": true,
+      "createdAt": "2026-01-01T00:00:00.000Z",
+      "lastLoginAt": "2026-10-03T07:35:39.331Z"
+    },
+    {
+      "accountId": "usr_teacher_panya",
+      "googleEmail": "panya.kan@mcu.ac.th",
+      "googleSub": "google_sub_panya",
+      "fullName": "ผศ.ปัญญา กันภัย",
+      "role": "teacher",
+      "status": "active",
+      "assignedScope": [
+        "000 136"
+      ],
+      "canReadExamContent": false,
+      "createdAt": "2026-01-01T00:00:00.000Z",
+      "lastLoginAt": "2026-10-03T07:35:39.331Z"
+    },
+    {
+      "accountId": "usr_teacher_bhak",
+      "googleEmail": "bhak.pha@mcu.ac.th",
+      "googleSub": "google_sub_bhak",
+      "fullName": "พระมหาภาคภูมิ ภทฺทเมธี",
+      "role": "teacher",
+      "status": "active",
+      "assignedScope": [
+        "SP 101"
+      ],
+      "canReadExamContent": false,
+      "createdAt": "2026-01-01T00:00:00.000Z",
+      "lastLoginAt": "2026-10-03T07:35:39.331Z"
+    }
+  ],
+  "courses": [
+    {
+      "courseId": "crs_000136_monk",
+      "courseCode": "000 136",
+      "courseName": "ภาษาบาลี",
+      "yearLevel": 1,
+      "faculty": "พุทธศาสตร์",
+      "major": "สาขาวิชาพระพุทธศาสนา",
+      "studentStatus": "บรรพชิต",
+      "examDateThai": "5 ตุลาคม 2569",
+      "examDateISO": "2026-10-05",
+      "examTimeThai": "09.00 - 11.30 น.",
+      "room": "ห้องประชุมชั้น 1",
+      "assignedLecturerIds": [
+        "usr_teacher_panya"
+      ]
+    },
+    {
+      "courseId": "crs_sp101_monk",
+      "courseCode": "SP 101",
+      "courseName": "บาลี 1",
+      "yearLevel": 1,
+      "faculty": "พุทธศาสตร์",
+      "major": "สาขาวิชาพระพุทธศาสนา",
+      "studentStatus": "บรรพชิต",
+      "examDateThai": "5 ตุลาคม 2569",
+      "examDateISO": "2026-10-05",
+      "examTimeThai": "12.30 - 15.00 น.",
+      "room": "ห้องประชุมชั้น 1",
+      "assignedLecturerIds": [
+        "usr_teacher_bhak"
+      ]
+    },
+    {
+      "courseId": "crs_000_136_monk",
+      "courseCode": "000 136",
+      "courseName": "ภาษาบาลี",
+      "yearLevel": 1,
+      "faculty": "ทุกคณะ",
+      "major": "ทุกสาขาวิชา (บรรพชิต)",
+      "studentStatus": "บรรพชิต",
+      "examDateThai": "5 ตุลาคม 2569",
+      "examDateISO": "2026-10-05",
+      "examTimeThai": "09.00 - 11.30 น.",
+      "room": "ห้องประชุมชั้น 1",
+      "assignedLecturerIds": []
+    },
+    {
+      "courseId": "crs_SP_101_monk",
+      "courseCode": "SP 101",
+      "courseName": "บาลี 1",
+      "yearLevel": 1,
+      "faculty": "ทุกคณะ",
+      "major": "ทุกสาขาวิชา (บรรพชิต)",
+      "studentStatus": "บรรพชิต",
+      "examDateThai": "5 ตุลาคม 2569",
+      "examDateISO": "2026-10-05",
+      "examTimeThai": "12.30 - 15.00 น.",
+      "room": "ห้องประชุมชั้น 1",
+      "assignedLecturerIds": []
+    },
+    {
+      "courseId": "crs_SP_102_monk",
+      "courseCode": "SP 102",
+      "courseName": "บาลี 2",
+      "yearLevel": 1,
+      "faculty": "ทุกคณะ",
+      "major": "ทุกสาขาวิชา (บรรพชิต)",
+      "studentStatus": "บรรพชิต",
+      "examDateThai": "5 ตุลาคม 2569",
+      "examDateISO": "2026-10-05",
+      "examTimeThai": "15.10 - 17.40 น.",
+      "room": "ห้องประชุมชั้น 1",
+      "assignedLecturerIds": []
+    },
+    {
+      "courseId": "crs_000_107_monk",
+      "courseCode": "000 107",
+      "courseName": "ความรู้เบื้องต้นเกี่ยวกับการเมืองการปกครอง",
+      "yearLevel": 1,
+      "faculty": "ทุกคณะ",
+      "major": "ทุกสาขาวิชา (บรรพชิต)",
+      "studentStatus": "บรรพชิต",
+      "examDateThai": "6 ตุลาคม 2569",
+      "examDateISO": "2026-10-06",
+      "examTimeThai": "09.00 - 11.30 น.",
+      "room": "ห้องประชุมชั้น 1",
+      "assignedLecturerIds": []
+    },
+    {
+      "courseId": "crs_000_102_monk",
+      "courseCode": "000 102",
+      "courseName": "กฎหมายทั่วไป",
+      "yearLevel": 1,
+      "faculty": "ทุกคณะ",
+      "major": "ทุกสาขาวิชา (บรรพชิต)",
+      "studentStatus": "บรรพชิต",
+      "examDateThai": "6 ตุลาคม 2569",
+      "examDateISO": "2026-10-06",
+      "examTimeThai": "12.30 - 15.00 น.",
+      "room": "ห้องประชุมชั้น 1",
+      "assignedLecturerIds": []
+    },
+    {
+      "courseId": "crs_000_230_monk",
+      "courseCode": "000 230",
+      "courseName": "หลักธรรมาภิบาล",
+      "yearLevel": 1,
+      "faculty": "ทุกคณะ",
+      "major": "ทุกสาขาวิชา (บรรพชิต)",
+      "studentStatus": "บรรพชิต",
+      "examDateThai": "7 ตุลาคม 2569",
+      "examDateISO": "2026-10-07",
+      "examTimeThai": "09.00 - 11.30 น.",
+      "room": "ห้องประชุมชั้น 1",
+      "assignedLecturerIds": []
+    },
+    {
+      "courseId": "crs_000_140_monk",
+      "courseCode": "000 140",
+      "courseName": "กรรมฐาน 1",
+      "yearLevel": 1,
+      "faculty": "ทุกคณะ",
+      "major": "ทุกสาขาวิชา (บรรพชิต)",
+      "studentStatus": "บรรพชิต",
+      "examDateThai": "7 ตุลาคม 2569",
+      "examDateISO": "2026-10-07",
+      "examTimeThai": "12.30 - 15.00 น.",
+      "room": "ห้องประชุมชั้น 1",
+      "assignedLecturerIds": []
+    },
+    {
+      "courseId": "crs_000_101_monk",
+      "courseCode": "000 101",
+      "courseName": "มนุษย์กับสังคม",
+      "yearLevel": 1,
+      "faculty": "ทุกคณะ",
+      "major": "ทุกสาขาวิชา (บรรพชิต)",
+      "studentStatus": "บรรพชิต",
+      "examDateThai": "16 ตุลาคม 2569",
+      "examDateISO": "2026-10-16",
+      "examTimeThai": "13.30 - 15.30 น.",
+      "room": "ห้องประชุมชั้น 1",
+      "assignedLecturerIds": []
+    },
+    {
+      "courseId": "crs_112_303_monk",
+      "courseCode": "112 303",
+      "courseName": "จริยศาสตร์",
+      "yearLevel": 2,
+      "faculty": "พุทธศาสตร์",
+      "major": "สาขาวิชาศาสนาและปรัชญา",
+      "studentStatus": "บรรพชิต",
+      "examDateThai": "5 ตุลาคม 2569",
+      "examDateISO": "2026-10-05",
+      "examTimeThai": "09.00 - 11.30 น.",
+      "room": "ห้องประชุมชั้น 1",
+      "assignedLecturerIds": []
+    },
+    {
+      "courseId": "crs_000_241_monk",
+      "courseCode": "000 241",
+      "courseName": "กรรมฐาน 2",
+      "yearLevel": 2,
+      "faculty": "พุทธศาสตร์",
+      "major": "สาขาวิชาศาสนาและปรัชญา",
+      "studentStatus": "บรรพชิต",
+      "examDateThai": "5 ตุลาคม 2569",
+      "examDateISO": "2026-10-05",
+      "examTimeThai": "12.30 - 15.00 น.",
+      "room": "ห้องประชุมชั้น 1",
+      "assignedLecturerIds": []
+    },
+    {
+      "courseId": "crs_112_310_monk",
+      "courseCode": "112 310",
+      "courseName": "ศาสนาพราหมณ์-ฮินดู",
+      "yearLevel": 2,
+      "faculty": "พุทธศาสตร์",
+      "major": "สาขาวิชาศาสนาและปรัชญา",
+      "studentStatus": "บรรพชิต",
+      "examDateThai": "6 ตุลาคม 2569",
+      "examDateISO": "2026-10-06",
+      "examTimeThai": "09.00 - 11.30 น.",
+      "room": "ห้องประชุมชั้น 1",
+      "assignedLecturerIds": []
+    },
+    {
+      "courseId": "crs_112_337_monk",
+      "courseCode": "112 337",
+      "courseName": "ศาสนากับภูมิปัญญาท้องถิ่น",
+      "yearLevel": 2,
+      "faculty": "พุทธศาสตร์",
+      "major": "สาขาวิชาศาสนาและปรัชญา",
+      "studentStatus": "บรรพชิต",
+      "examDateThai": "6 ตุลาคม 2569",
+      "examDateISO": "2026-10-06",
+      "examTimeThai": "12.30 - 15.00 น.",
+      "room": "ห้องประชุมชั้น 1",
+      "assignedLecturerIds": []
+    },
+    {
+      "courseId": "crs_000_103_monk",
+      "courseCode": "000 103",
+      "courseName": "คอมพิวเตอร์และเทคโนโลยีดิจิทัล",
+      "yearLevel": 2,
+      "faculty": "พุทธศาสตร์",
+      "major": "สาขาวิชาศาสนาและปรัชญา",
+      "studentStatus": "บรรพชิต",
+      "examDateThai": "16 ตุลาคม 2569",
+      "examDateISO": "2026-10-16",
+      "examTimeThai": "09.00 - 11.30 น.",
+      "room": "ห้องประชุมชั้น 1",
+      "assignedLecturerIds": []
+    },
+    {
+      "courseId": "crs_000_238_monk",
+      "courseCode": "000 238",
+      "courseName": "เทศกาลและพิธีกรรมพระพุทธศาสนา",
+      "yearLevel": 2,
+      "faculty": "พุทธศาสตร์",
+      "major": "สาขาวิชาศาสนาและปรัชญา",
+      "studentStatus": "บรรพชิต",
+      "examDateThai": "16 ตุลาคม 2569",
+      "examDateISO": "2026-10-16",
+      "examTimeThai": "13.30 - 16.00 น.",
+      "room": "ห้องประชุมชั้น 1",
+      "assignedLecturerIds": []
+    },
+    {
+      "courseId": "crs_402_442_monk",
+      "courseCode": "402 442",
+      "courseName": "รัฐประศาสนศาสตร์ตามแนวพระพุทธศาสนา",
+      "yearLevel": 2,
+      "faculty": "สังคมศาสตร์",
+      "major": "สาขาวิชารัฐประศาสนศาสตร์",
+      "studentStatus": "บรรพชิต",
+      "examDateThai": "5 ตุลาคม 2569",
+      "examDateISO": "2026-10-05",
+      "examTimeThai": "09.00 - 11.30 น.",
+      "room": "ห้องประชุมชั้น 1",
+      "assignedLecturerIds": []
+    },
+    {
+      "courseId": "crs_401_429_monk",
+      "courseCode": "401 429",
+      "courseName": "นวัตกรรมการบริหารองค์กรปกครองส่วนท้องถิ่น",
+      "yearLevel": 2,
+      "faculty": "สังคมศาสตร์",
+      "major": "สาขาวิชารัฐประศาสนศาสตร์",
+      "studentStatus": "บรรพชิต",
+      "examDateThai": "6 ตุลาคม 2569",
+      "examDateISO": "2026-10-06",
+      "examTimeThai": "09.00 - 11.30 น.",
+      "room": "ห้องประชุมชั้น 1",
+      "assignedLecturerIds": []
+    },
+    {
+      "courseId": "crs_402_478_monk",
+      "courseCode": "402 478",
+      "courseName": "พ่อขุนผาเมืองศึกษา",
+      "yearLevel": 2,
+      "faculty": "สังคมศาสตร์",
+      "major": "สาขาวิชารัฐประศาสนศาสตร์",
+      "studentStatus": "บรรพชิต",
+      "examDateThai": "6 ตุลาคม 2569",
+      "examDateISO": "2026-10-06",
+      "examTimeThai": "12.30 - 15.00 น.",
+      "room": "ห้องประชุมชั้น 1",
+      "assignedLecturerIds": []
+    },
+    {
+      "courseId": "crs_101_417_monk",
+      "courseCode": "101 417",
+      "courseName": "พุทธศิลปกรรม",
+      "yearLevel": 2,
+      "faculty": "พุทธศาสตร์",
+      "major": "สาขาวิชาพระพุทธศาสนา (ส-อา.)",
+      "studentStatus": "บรรพชิต",
+      "examDateThai": "5 ตุลาคม 2569",
+      "examDateISO": "2026-10-05",
+      "examTimeThai": "09.00 - 11.30 น.",
+      "room": "ห้องประชุมชั้น 1",
+      "assignedLecturerIds": []
+    },
+    {
+      "courseId": "crs_101_311_monk",
+      "courseCode": "101 311",
+      "courseName": "หลักพุทธธรรม",
+      "yearLevel": 2,
+      "faculty": "พุทธศาสตร์",
+      "major": "สาขาวิชาพระพุทธศาสนา (ส-อา.)",
+      "studentStatus": "บรรพชิต",
+      "examDateThai": "6 ตุลาคม 2569",
+      "examDateISO": "2026-10-06",
+      "examTimeThai": "09.00 - 11.30 น.",
+      "room": "ห้องประชุมชั้น 1",
+      "assignedLecturerIds": []
+    },
+    {
+      "courseId": "crs_101_313_monk",
+      "courseCode": "101 313",
+      "courseName": "ธรรมบทศึกษา",
+      "yearLevel": 2,
+      "faculty": "พุทธศาสตร์",
+      "major": "สาขาวิชาพระพุทธศาสนา (ส-อา.)",
+      "studentStatus": "บรรพชิต",
+      "examDateThai": "6 ตุลาคม 2569",
+      "examDateISO": "2026-10-06",
+      "examTimeThai": "12.30 - 15.00 น.",
+      "room": "ห้องประชุมชั้น 1",
+      "assignedLecturerIds": []
+    },
+    {
+      "courseId": "crs_112_412_monk",
+      "courseCode": "112 412",
+      "courseName": "พุทธปรัชญา",
+      "yearLevel": 3,
+      "faculty": "พุทธศาสตร์",
+      "major": "สาขาวิชาศาสนาและปรัชญา",
+      "studentStatus": "บรรพชิต",
+      "examDateThai": "5 ตุลาคม 2569",
+      "examDateISO": "2026-10-05",
+      "examTimeThai": "09.00 - 11.30 น.",
+      "room": "ห้องประชุมชั้น 1",
+      "assignedLecturerIds": []
+    },
+    {
+      "courseId": "crs_112_309_monk",
+      "courseCode": "112 309",
+      "courseName": "ศาสนาอิสลาม",
+      "yearLevel": 3,
+      "faculty": "พุทธศาสตร์",
+      "major": "สาขาวิชาศาสนาและปรัชญา",
+      "studentStatus": "บรรพชิต",
+      "examDateThai": "5 ตุลาคม 2569",
+      "examDateISO": "2026-10-05",
+      "examTimeThai": "12.30 - 15.00 น.",
+      "room": "ห้องประชุมชั้น 1",
+      "assignedLecturerIds": []
+    },
+    {
+      "courseId": "crs_112_308_monk",
+      "courseCode": "112 308",
+      "courseName": "ศาสนาคริสต์",
+      "yearLevel": 3,
+      "faculty": "พุทธศาสตร์",
+      "major": "สาขาวิชาศาสนาและปรัชญา",
+      "studentStatus": "บรรพชิต",
+      "examDateThai": "6 ตุลาคม 2569",
+      "examDateISO": "2026-10-06",
+      "examTimeThai": "09.00 - 11.30 น.",
+      "room": "ห้องประชุมชั้น 1",
+      "assignedLecturerIds": []
+    },
+    {
+      "courseId": "crs_112_418_monk",
+      "courseCode": "112 418",
+      "courseName": "ศาสนากับสันติภาพ",
+      "yearLevel": 3,
+      "faculty": "พุทธศาสตร์",
+      "major": "สาขาวิชาศาสนาและปรัชญา",
+      "studentStatus": "บรรพชิต",
+      "examDateThai": "6 ตุลาคม 2569",
+      "examDateISO": "2026-10-06",
+      "examTimeThai": "12.30 - 15.00 น.",
+      "room": "ห้องประชุมชั้น 1",
+      "assignedLecturerIds": []
+    },
+    {
+      "courseId": "crs_000_342_monk",
+      "courseCode": "000 342",
+      "courseName": "กรรมฐาน 3",
+      "yearLevel": 3,
+      "faculty": "พุทธศาสตร์",
+      "major": "สาขาวิชาศาสนาและปรัชญา",
+      "studentStatus": "บรรพชิต",
+      "examDateThai": "7 ตุลาคม 2569",
+      "examDateISO": "2026-10-07",
+      "examTimeThai": "09.00 - 11.30 น.",
+      "room": "ห้องประชุมชั้น 1",
+      "assignedLecturerIds": []
+    },
+    {
+      "courseId": "crs_112_301_monk",
+      "courseCode": "112 301",
+      "courseName": "อภิปรัชญา",
+      "yearLevel": 3,
+      "faculty": "พุทธศาสตร์",
+      "major": "สาขาวิชาศาสนาและปรัชญา",
+      "studentStatus": "บรรพชิต",
+      "examDateThai": "7 ตุลาคม 2569",
+      "examDateISO": "2026-10-07",
+      "examTimeThai": "12.30 - 15.00 น.",
+      "room": "ห้องประชุมชั้น 1",
+      "assignedLecturerIds": []
+    },
+    {
+      "courseId": "crs_101_315_monk",
+      "courseCode": "101 315",
+      "courseName": "ชาดกศึกษา",
+      "yearLevel": 3,
+      "faculty": "พุทธศาสตร์",
+      "major": "สาขาวิชาพระพุทธศาสนา",
+      "studentStatus": "บรรพชิต",
+      "examDateThai": "5 ตุลาคม 2569",
+      "examDateISO": "2026-10-05",
+      "examTimeThai": "09.00 - 11.30 น.",
+      "room": "ห้องประชุมชั้น 1",
+      "assignedLecturerIds": []
+    },
+    {
+      "courseId": "crs_101_434_monk",
+      "courseCode": "101 434",
+      "courseName": "ประวัติพระพุทธศาสนาในประเทศไทย",
+      "yearLevel": 3,
+      "faculty": "พุทธศาสตร์",
+      "major": "สาขาวิชาพระพุทธศาสนา",
+      "studentStatus": "บรรพชิต",
+      "examDateThai": "5 ตุลาคม 2569",
+      "examDateISO": "2026-10-05",
+      "examTimeThai": "12.30 - 15.00 น.",
+      "room": "ห้องประชุมชั้น 1",
+      "assignedLecturerIds": []
+    },
+    {
+      "courseId": "crs_101_104_monk",
+      "courseCode": "101 104",
+      "courseName": "ศึกษาศาสตร์ในพระไตรปิฎก",
+      "yearLevel": 3,
+      "faculty": "พุทธศาสตร์",
+      "major": "สาขาวิชาพระพุทธศาสนา",
+      "studentStatus": "บรรพชิต",
+      "examDateThai": "6 ตุลาคม 2569",
+      "examDateISO": "2026-10-06",
+      "examTimeThai": "09.00 - 11.30 น.",
+      "room": "ห้องประชุมชั้น 1",
+      "assignedLecturerIds": []
+    },
+    {
+      "courseId": "crs_101_418_monk",
+      "courseCode": "101 418",
+      "courseName": "ภาษาอังกฤษสำหรับพระพุทธศาสนา",
+      "yearLevel": 3,
+      "faculty": "พุทธศาสตร์",
+      "major": "สาขาวิชาพระพุทธศาสนา",
+      "studentStatus": "บรรพชิต",
+      "examDateThai": "6 ตุลาคม 2569",
+      "examDateISO": "2026-10-06",
+      "examTimeThai": "12.30 - 15.00 น.",
+      "room": "ห้องประชุมชั้น 1",
+      "assignedLecturerIds": []
+    },
+    {
+      "courseId": "crs_101_102_monk",
+      "courseCode": "101 102",
+      "courseName": "พระพุทธศาสนากับสังคมสงเคราะห์",
+      "yearLevel": 3,
+      "faculty": "พุทธศาสตร์",
+      "major": "สาขาวิชาพระพุทธศาสนา",
+      "studentStatus": "บรรพชิต",
+      "examDateThai": "7 ตุลาคม 2569",
+      "examDateISO": "2026-10-07",
+      "examTimeThai": "12.30 - 15.00 น.",
+      "room": "ห้องประชุมชั้น 1",
+      "assignedLecturerIds": []
+    },
+    {
+      "courseId": "crs_402_315_monk",
+      "courseCode": "402 315",
+      "courseName": "กฎหมายวิธีพิจารณาความอาญา",
+      "yearLevel": 3,
+      "faculty": "สังคมศาสตร์",
+      "major": "สาขาวิชารัฐประศาสนศาสตร์",
+      "studentStatus": "บรรพชิต",
+      "examDateThai": "5 ตุลาคม 2569",
+      "examDateISO": "2026-10-05",
+      "examTimeThai": "09.00 - 11.30 น.",
+      "room": "ห้องประชุมชั้น 1",
+      "assignedLecturerIds": []
+    },
+    {
+      "courseId": "crs_402_204_monk",
+      "courseCode": "402 204",
+      "courseName": "นโยบายสาธารณะและการวางแผน",
+      "yearLevel": 3,
+      "faculty": "สังคมศาสตร์",
+      "major": "สาขาวิชารัฐประศาสนศาสตร์",
+      "studentStatus": "บรรพชิต",
+      "examDateThai": "5 ตุลาคม 2569",
+      "examDateISO": "2026-10-05",
+      "examTimeThai": "12.30 - 15.00 น.",
+      "room": "ห้องประชุมชั้น 1",
+      "assignedLecturerIds": []
+    },
+    {
+      "courseId": "crs_402_316_monk",
+      "courseCode": "402 316",
+      "courseName": "ระเบียบวิธีทางรัฐประศาสนศาสตร์",
+      "yearLevel": 3,
+      "faculty": "สังคมศาสตร์",
+      "major": "สาขาวิชารัฐประศาสนศาสตร์",
+      "studentStatus": "บรรพชิต",
+      "examDateThai": "6 ตุลาคม 2569",
+      "examDateISO": "2026-10-06",
+      "examTimeThai": "09.00 - 11.30 น.",
+      "room": "ห้องประชุมชั้น 1",
+      "assignedLecturerIds": []
+    },
+    {
+      "courseId": "crs_402_413_monk",
+      "courseCode": "402 413",
+      "courseName": "พุทธจริยธรรมทางการบริหาร",
+      "yearLevel": 3,
+      "faculty": "สังคมศาสตร์",
+      "major": "สาขาวิชารัฐประศาสนศาสตร์",
+      "studentStatus": "บรรพชิต",
+      "examDateThai": "6 ตุลาคม 2569",
+      "examDateISO": "2026-10-06",
+      "examTimeThai": "12.30 - 15.00 น.",
+      "room": "ห้องประชุมชั้น 1",
+      "assignedLecturerIds": []
+    },
+    {
+      "courseId": "crs_402_307_monk",
+      "courseCode": "402 307",
+      "courseName": "การบริหารงบประมาณและการคลังสาธารณะ",
+      "yearLevel": 3,
+      "faculty": "สังคมศาสตร์",
+      "major": "สาขาวิชารัฐประศาสนศาสตร์",
+      "studentStatus": "บรรพชิต",
+      "examDateThai": "7 ตุลาคม 2569",
+      "examDateISO": "2026-10-07",
+      "examTimeThai": "12.30 - 15.00 น.",
+      "room": "ห้องประชุมชั้น 1",
+      "assignedLecturerIds": []
+    },
+    {
+      "courseId": "crs_112_335_monk",
+      "courseCode": "112 335",
+      "courseName": "ศาสนาในอาเซียน",
+      "yearLevel": 4,
+      "faculty": "พุทธศาสตร์",
+      "major": "สาขาวิชาศาสนาและปรัชญา",
+      "studentStatus": "บรรพชิต",
+      "examDateThai": "5 ตุลาคม 2569",
+      "examDateISO": "2026-10-05",
+      "examTimeThai": "09.00 - 11.30 น.",
+      "room": "ห้องประชุมชั้น 1",
+      "assignedLecturerIds": []
+    },
+    {
+      "courseId": "crs_112_421_monk",
+      "courseCode": "112 421",
+      "courseName": "ภาษาศาสนา",
+      "yearLevel": 4,
+      "faculty": "พุทธศาสตร์",
+      "major": "สาขาวิชาศาสนาและปรัชญา",
+      "studentStatus": "บรรพชิต",
+      "examDateThai": "5 ตุลาคม 2569",
+      "examDateISO": "2026-10-05",
+      "examTimeThai": "12.30 - 15.00 น.",
+      "room": "ห้องประชุมชั้น 1",
+      "assignedLecturerIds": []
+    },
+    {
+      "courseId": "crs_000_443_monk",
+      "courseCode": "000 443",
+      "courseName": "กรรมฐาน 4",
+      "yearLevel": 4,
+      "faculty": "พุทธศาสตร์",
+      "major": "สาขาวิชาศาสนาและปรัชญา",
+      "studentStatus": "บรรพชิต",
+      "examDateThai": "6 ตุลาคม 2569",
+      "examDateISO": "2026-10-06",
+      "examTimeThai": "09.00 - 11.30 น.",
+      "room": "ห้องประชุมชั้น 1",
+      "assignedLecturerIds": []
+    },
+    {
+      "courseId": "crs_112_414_monk",
+      "courseCode": "112 414",
+      "courseName": "ปรัชญาวิเคราะห์",
+      "yearLevel": 4,
+      "faculty": "พุทธศาสตร์",
+      "major": "สาขาวิชาศาสนาและปรัชญา",
+      "studentStatus": "บรรพชิต",
+      "examDateThai": "6 ตุลาคม 2569",
+      "examDateISO": "2026-10-06",
+      "examTimeThai": "12.30 - 15.00 น.",
+      "room": "ห้องประชุมชั้น 1",
+      "assignedLecturerIds": []
+    },
+    {
+      "courseId": "crs_112_323_monk",
+      "courseCode": "112 323",
+      "courseName": "ปรัชญาไทย",
+      "yearLevel": 4,
+      "faculty": "พุทธศาสตร์",
+      "major": "สาขาวิชาศาสนาและปรัชญา",
+      "studentStatus": "บรรพชิต",
+      "examDateThai": "7 ตุลาคม 2569",
+      "examDateISO": "2026-10-07",
+      "examTimeThai": "09.00 - 11.30 น.",
+      "room": "ห้องประชุมชั้น 1",
+      "assignedLecturerIds": []
+    },
+    {
+      "courseId": "crs_112_306_monk",
+      "courseCode": "112 306",
+      "courseName": "ปรัชญาตะวันตกสมัยโบราณ",
+      "yearLevel": 4,
+      "faculty": "พุทธศาสตร์",
+      "major": "สาขาวิชาศาสนาและปรัชญา",
+      "studentStatus": "บรรพชิต",
+      "examDateThai": "7 ตุลาคม 2569",
+      "examDateISO": "2026-10-07",
+      "examTimeThai": "12.30 - 15.00 น.",
+      "room": "ห้องประชุมชั้น 1",
+      "assignedLecturerIds": []
+    },
+    {
+      "courseId": "crs_101_420_monk",
+      "courseCode": "101 420",
+      "courseName": "ศึกษาอิสระทางพระพุทธศาสนา",
+      "yearLevel": 4,
+      "faculty": "พุทธศาสตร์",
+      "major": "สาขาวิชาพระพุทธศาสนา",
+      "studentStatus": "บรรพชิต",
+      "examDateThai": "5 ตุลาคม 2569",
+      "examDateISO": "2026-10-05",
+      "examTimeThai": "09.00 - 11.30 น.",
+      "room": "ห้องประชุมชั้น 1",
+      "assignedLecturerIds": []
+    },
+    {
+      "courseId": "crs_101_205_monk",
+      "courseCode": "101 205",
+      "courseName": "พระพุทธศาสนากับนิเวศวิทยา",
+      "yearLevel": 4,
+      "faculty": "พุทธศาสตร์",
+      "major": "สาขาวิชาพระพุทธศาสนา",
+      "studentStatus": "บรรพชิต",
+      "examDateThai": "5 ตุลาคม 2569",
+      "examDateISO": "2026-10-05",
+      "examTimeThai": "12.30 - 15.00 น.",
+      "room": "ห้องประชุมชั้น 1",
+      "assignedLecturerIds": []
+    },
+    {
+      "courseId": "crs_101_307_monk",
+      "courseCode": "101 307",
+      "courseName": "รัฐศาสตร์ในพระไตรปิฎก",
+      "yearLevel": 4,
+      "faculty": "พุทธศาสตร์",
+      "major": "สาขาวิชาพระพุทธศาสนา",
+      "studentStatus": "บรรพชิต",
+      "examDateThai": "6 ตุลาคม 2569",
+      "examDateISO": "2026-10-06",
+      "examTimeThai": "12.30 - 15.00 น.",
+      "room": "ห้องประชุมชั้น 1",
+      "assignedLecturerIds": []
+    },
+    {
+      "courseId": "crs_101_323_monk",
+      "courseCode": "101 323",
+      "courseName": "พุทธธรรมกับสังคมไทย",
+      "yearLevel": 4,
+      "faculty": "พุทธศาสตร์",
+      "major": "สาขาวิชาพระพุทธศาสนา",
+      "studentStatus": "บรรพชิต",
+      "examDateThai": "7 ตุลาคม 2569",
+      "examDateISO": "2026-10-07",
+      "examTimeThai": "09.00 - 11.30 น.",
+      "room": "ห้องประชุมชั้น 1",
+      "assignedLecturerIds": []
+    },
+    {
+      "courseId": "crs_101_431_monk",
+      "courseCode": "101 431",
+      "courseName": "พระพุทธศาสนากับเศรษฐศาสตร์",
+      "yearLevel": 4,
+      "faculty": "พุทธศาสตร์",
+      "major": "สาขาวิชาพระพุทธศาสนา",
+      "studentStatus": "บรรพชิต",
+      "examDateThai": "7 ตุลาคม 2569",
+      "examDateISO": "2026-10-07",
+      "examTimeThai": "12.30 - 15.00 น.",
+      "room": "ห้องประชุมชั้น 1",
+      "assignedLecturerIds": []
+    },
+    {
+      "courseId": "crs_402_411_monk",
+      "courseCode": "402 411",
+      "courseName": "การบริหารเชิงกลยุทธ์",
+      "yearLevel": 4,
+      "faculty": "สังคมศาสตร์",
+      "major": "สาขาวิชารัฐประศาสนศาสตร์",
+      "studentStatus": "บรรพชิต",
+      "examDateThai": "5 ตุลาคม 2569",
+      "examDateISO": "2026-10-05",
+      "examTimeThai": "09.00 - 11.30 น.",
+      "room": "ห้องประชุมชั้น 1",
+      "assignedLecturerIds": []
+    },
+    {
+      "courseId": "crs_402_308_monk",
+      "courseCode": "402 308",
+      "courseName": "การบริหารงบประมาณและการคลังสาธารณะ",
+      "yearLevel": 4,
+      "faculty": "สังคมศาสตร์",
+      "major": "สาขาวิชารัฐประศาสนศาสตร์",
+      "studentStatus": "บรรพชิต",
+      "examDateThai": "5 ตุลาคม 2569",
+      "examDateISO": "2026-10-05",
+      "examTimeThai": "12.30 - 15.00 น.",
+      "room": "ห้องประชุมชั้น 1",
+      "assignedLecturerIds": []
+    },
+    {
+      "courseId": "crs_402_314_monk",
+      "courseCode": "402 314",
+      "courseName": "การบริหารการคลังส่วนท้องถิ่น",
+      "yearLevel": 4,
+      "faculty": "สังคมศาสตร์",
+      "major": "สาขาวิชารัฐประศาสนศาสตร์",
+      "studentStatus": "บรรพชิต",
+      "examDateThai": "7 ตุลาคม 2569",
+      "examDateISO": "2026-10-07",
+      "examTimeThai": "12.30 - 15.00 น.",
+      "room": "ห้องประชุมชั้น 1",
+      "assignedLecturerIds": []
+    },
+    {
+      "courseId": "crs_000_107_lay",
+      "courseCode": "000 107",
+      "courseName": "ความรู้เบื้องต้นเกี่ยวกับการเมืองการปกครอง",
+      "yearLevel": 1,
+      "faculty": "สังคมศาสตร์",
+      "major": "สาขาวิชารัฐประศาสนศาสตร์",
+      "studentStatus": "คฤหัสถ์",
+      "examDateThai": "10 ตุลาคม 2569",
+      "examDateISO": "2026-10-10",
+      "examTimeThai": "09.00 - 11.30 น.",
+      "room": "ห้องประชุมชั้น 1",
+      "assignedLecturerIds": []
+    },
+    {
+      "courseId": "crs_000_230_lay",
+      "courseCode": "000 230",
+      "courseName": "หลักธรรมาภิบาล",
+      "yearLevel": 1,
+      "faculty": "สังคมศาสตร์",
+      "major": "สาขาวิชารัฐประศาสนศาสตร์",
+      "studentStatus": "คฤหัสถ์",
+      "examDateThai": "10 ตุลาคม 2569",
+      "examDateISO": "2026-10-10",
+      "examTimeThai": "12.30 - 15.00 น.",
+      "room": "ห้องประชุมชั้น 1",
+      "assignedLecturerIds": []
+    },
+    {
+      "courseId": "crs_SP_101_102_lay",
+      "courseCode": "SP 101-102",
+      "courseName": "บาลี 1-2",
+      "yearLevel": 1,
+      "faculty": "สังคมศาสตร์",
+      "major": "สาขาวิชารัฐประศาสนศาสตร์",
+      "studentStatus": "คฤหัสถ์",
+      "examDateThai": "10 ตุลาคม 2569",
+      "examDateISO": "2026-10-10",
+      "examTimeThai": "15.10 - 17.40 น.",
+      "room": "ห้องประชุมชั้น 1",
+      "assignedLecturerIds": []
+    },
+    {
+      "courseId": "crs_000_136_lay",
+      "courseCode": "000 136",
+      "courseName": "ภาษาบาลี",
+      "yearLevel": 1,
+      "faculty": "สังคมศาสตร์",
+      "major": "สาขาวิชารัฐประศาสนศาสตร์",
+      "studentStatus": "คฤหัสถ์",
+      "examDateThai": "11 ตุลาคม 2569",
+      "examDateISO": "2026-10-11",
+      "examTimeThai": "09.00 - 11.30 น.",
+      "room": "ห้องประชุมชั้น 1",
+      "assignedLecturerIds": []
+    },
+    {
+      "courseId": "crs_000_102_lay",
+      "courseCode": "000 102",
+      "courseName": "กฎหมายทั่วไป",
+      "yearLevel": 1,
+      "faculty": "สังคมศาสตร์",
+      "major": "สาขาวิชารัฐประศาสนศาสตร์",
+      "studentStatus": "คฤหัสถ์",
+      "examDateThai": "11 ตุลาคม 2569",
+      "examDateISO": "2026-10-11",
+      "examTimeThai": "12.30 - 15.00 น.",
+      "room": "ห้องประชุมชั้น 1",
+      "assignedLecturerIds": []
+    },
+    {
+      "courseId": "crs_000_140_lay",
+      "courseCode": "000 140",
+      "courseName": "กรรมฐาน 1",
+      "yearLevel": 1,
+      "faculty": "สังคมศาสตร์",
+      "major": "สาขาวิชารัฐประศาสนศาสตร์",
+      "studentStatus": "คฤหัสถ์",
+      "examDateThai": "11 ตุลาคม 2569",
+      "examDateISO": "2026-10-11",
+      "examTimeThai": "15.10 - 17.40 น.",
+      "room": "ห้องประชุมชั้น 1",
+      "assignedLecturerIds": []
+    },
+    {
+      "courseId": "crs_000_101_lay",
+      "courseCode": "000 101",
+      "courseName": "มนุษย์กับสังคม",
+      "yearLevel": 1,
+      "faculty": "สังคมศาสตร์",
+      "major": "สาขาวิชารัฐประศาสนศาสตร์",
+      "studentStatus": "คฤหัสถ์",
+      "examDateThai": "17 ตุลาคม 2569",
+      "examDateISO": "2026-10-17",
+      "examTimeThai": "13.00 - 15.30 น.",
+      "room": "ห้องประชุมชั้น 1",
+      "assignedLecturerIds": []
+    },
+    {
+      "courseId": "crs_000_241_lay",
+      "courseCode": "000 241",
+      "courseName": "กรรมฐาน 2",
+      "yearLevel": 2,
+      "faculty": "สังคมศาสตร์",
+      "major": "สาขาวิชารัฐประศาสนศาสตร์",
+      "studentStatus": "คฤหัสถ์",
+      "examDateThai": "10 ตุลาคม 2569",
+      "examDateISO": "2026-10-10",
+      "examTimeThai": "09.00 - 11.30 น.",
+      "room": "ห้องประชุมชั้น 1",
+      "assignedLecturerIds": []
+    },
+    {
+      "courseId": "crs_402_478_lay",
+      "courseCode": "402 478",
+      "courseName": "พ่อขุนผาเมืองศึกษา",
+      "yearLevel": 2,
+      "faculty": "สังคมศาสตร์",
+      "major": "สาขาวิชารัฐประศาสนศาสตร์",
+      "studentStatus": "คฤหัสถ์",
+      "examDateThai": "10 ตุลาคม 2569",
+      "examDateISO": "2026-10-10",
+      "examTimeThai": "12.30 - 15.00 น.",
+      "room": "ห้องประชุมชั้น 1",
+      "assignedLecturerIds": []
+    },
+    {
+      "courseId": "crs_402_429_lay",
+      "courseCode": "402 429",
+      "courseName": "นวัตกรรมการบริหารองค์กรปกครองส่วนท้องถิ่น",
+      "yearLevel": 2,
+      "faculty": "สังคมศาสตร์",
+      "major": "สาขาวิชารัฐประศาสนศาสตร์",
+      "studentStatus": "คฤหัสถ์",
+      "examDateThai": "11 ตุลาคม 2569",
+      "examDateISO": "2026-10-11",
+      "examTimeThai": "09.00 - 11.30 น.",
+      "room": "ห้องประชุมชั้น 1",
+      "assignedLecturerIds": []
+    },
+    {
+      "courseId": "crs_402_442_lay",
+      "courseCode": "402 442",
+      "courseName": "รัฐประศาสนศาสตร์ตามแนวพระพุทธศาสนา",
+      "yearLevel": 2,
+      "faculty": "สังคมศาสตร์",
+      "major": "สาขาวิชารัฐประศาสนศาสตร์",
+      "studentStatus": "คฤหัสถ์",
+      "examDateThai": "11 ตุลาคม 2569",
+      "examDateISO": "2026-10-11",
+      "examTimeThai": "12.30 - 15.00 น.",
+      "room": "ห้องประชุมชั้น 1",
+      "assignedLecturerIds": []
+    },
+    {
+      "courseId": "crs_000_103_lay",
+      "courseCode": "000 103",
+      "courseName": "คอมพิวเตอร์และเทคโนโลยีดิจิทัล",
+      "yearLevel": 2,
+      "faculty": "สังคมศาสตร์",
+      "major": "สาขาวิชารัฐประศาสนศาสตร์",
+      "studentStatus": "คฤหัสถ์",
+      "examDateThai": "17 ตุลาคม 2569",
+      "examDateISO": "2026-10-17",
+      "examTimeThai": "09.00 - 11.30 น.",
+      "room": "ห้องประชุมชั้น 1",
+      "assignedLecturerIds": []
+    },
+    {
+      "courseId": "crs_000_238_lay",
+      "courseCode": "000 238",
+      "courseName": "เทศกาลและพิธีกรรมพระพุทธศาสนา",
+      "yearLevel": 2,
+      "faculty": "สังคมศาสตร์",
+      "major": "สาขาวิชารัฐประศาสนศาสตร์",
+      "studentStatus": "คฤหัสถ์",
+      "examDateThai": "17 ตุลาคม 2569",
+      "examDateISO": "2026-10-17",
+      "examTimeThai": "13.30 - 16.00 น.",
+      "room": "ห้องประชุมชั้น 1",
+      "assignedLecturerIds": []
+    },
+    {
+      "courseId": "crs_402_413_lay",
+      "courseCode": "402 413",
+      "courseName": "พุทธจริยธรรมทางการบริหาร",
+      "yearLevel": 3,
+      "faculty": "สังคมศาสตร์",
+      "major": "สาขาวิชารัฐประศาสนศาสตร์",
+      "studentStatus": "คฤหัสถ์",
+      "examDateThai": "10 ตุลาคม 2569",
+      "examDateISO": "2026-10-10",
+      "examTimeThai": "09.00 - 11.30 น.",
+      "room": "ห้องประชุมชั้น 1",
+      "assignedLecturerIds": []
+    },
+    {
+      "courseId": "crs_402_316_lay",
+      "courseCode": "402 316",
+      "courseName": "ระเบียบวิธีวิจัยทางรัฐประศาสนศาสตร์",
+      "yearLevel": 3,
+      "faculty": "สังคมศาสตร์",
+      "major": "สาขาวิชารัฐประศาสนศาสตร์",
+      "studentStatus": "คฤหัสถ์",
+      "examDateThai": "10 ตุลาคม 2569",
+      "examDateISO": "2026-10-10",
+      "examTimeThai": "12.30 - 15.00 น.",
+      "room": "ห้องประชุมชั้น 1",
+      "assignedLecturerIds": []
+    },
+    {
+      "courseId": "crs_402_307_lay",
+      "courseCode": "402 307",
+      "courseName": "การบริหารงบประมาณและการคลังสาธารณะ",
+      "yearLevel": 3,
+      "faculty": "สังคมศาสตร์",
+      "major": "สาขาวิชารัฐประศาสนศาสตร์",
+      "studentStatus": "คฤหัสถ์",
+      "examDateThai": "10 ตุลาคม 2569",
+      "examDateISO": "2026-10-10",
+      "examTimeThai": "15.10 - 17.40 น.",
+      "room": "ห้องประชุมชั้น 1",
+      "assignedLecturerIds": []
+    },
+    {
+      "courseId": "crs_402_204_lay",
+      "courseCode": "402 204",
+      "courseName": "นโยบายสาธารณะและการวางแผน",
+      "yearLevel": 3,
+      "faculty": "สังคมศาสตร์",
+      "major": "สาขาวิชารัฐประศาสนศาสตร์",
+      "studentStatus": "คฤหัสถ์",
+      "examDateThai": "11 ตุลาคม 2569",
+      "examDateISO": "2026-10-11",
+      "examTimeThai": "09.00 - 11.30 น.",
+      "room": "ห้องประชุมชั้น 1",
+      "assignedLecturerIds": []
+    },
+    {
+      "courseId": "crs_402_315_lay",
+      "courseCode": "402 315",
+      "courseName": "กฎหมายวิธีพิจารณาความอาญา",
+      "yearLevel": 3,
+      "faculty": "สังคมศาสตร์",
+      "major": "สาขาวิชารัฐประศาสนศาสตร์",
+      "studentStatus": "คฤหัสถ์",
+      "examDateThai": "11 ตุลาคม 2569",
+      "examDateISO": "2026-10-11",
+      "examTimeThai": "12.30 - 15.00 น.",
+      "room": "ห้องประชุมชั้น 1",
+      "assignedLecturerIds": []
+    },
+    {
+      "courseId": "crs_000_342_lay",
+      "courseCode": "000 342",
+      "courseName": "กรรมฐาน 3",
+      "yearLevel": 3,
+      "faculty": "สังคมศาสตร์",
+      "major": "สาขาวิชารัฐประศาสนศาสตร์",
+      "studentStatus": "คฤหัสถ์",
+      "examDateThai": "11 ตุลาคม 2569",
+      "examDateISO": "2026-10-11",
+      "examTimeThai": "15.10 - 17.40 น.",
+      "room": "ห้องประชุมชั้น 1",
+      "assignedLecturerIds": []
+    },
+    {
+      "courseId": "crs_402_419_lay",
+      "courseCode": "402 419",
+      "courseName": "การศึกษาอิสระทางรัฐประศาสนศาสตร์",
+      "yearLevel": 4,
+      "faculty": "สังคมศาสตร์",
+      "major": "สาขาวิชารัฐประศาสนศาสตร์",
+      "studentStatus": "คฤหัสถ์",
+      "examDateThai": "10 ตุลาคม 2569",
+      "examDateISO": "2026-10-10",
+      "examTimeThai": "09.00 - 11.30 น.",
+      "room": "ห้องประชุมชั้น 1",
+      "assignedLecturerIds": []
+    },
+    {
+      "courseId": "crs_000_443_lay",
+      "courseCode": "000 443",
+      "courseName": "กรรมฐาน 4",
+      "yearLevel": 4,
+      "faculty": "สังคมศาสตร์",
+      "major": "สาขาวิชารัฐประศาสนศาสตร์",
+      "studentStatus": "คฤหัสถ์",
+      "examDateThai": "11 ตุลาคม 2569",
+      "examDateISO": "2026-10-11",
+      "examTimeThai": "09.00 - 11.30 น.",
+      "room": "ห้องประชุมชั้น 1",
+      "assignedLecturerIds": []
+    },
+    {
+      "courseId": "crs_402_320_lay",
+      "courseCode": "402 320",
+      "courseName": "สัมมนาทางรัฐประศาสนศาสตร์เชิงพุทธ",
+      "yearLevel": 4,
+      "faculty": "สังคมศาสตร์",
+      "major": "สาขาวิชารัฐประศาสนศาสตร์",
+      "studentStatus": "คฤหัสถ์",
+      "examDateThai": "11 ตุลาคม 2569",
+      "examDateISO": "2026-10-11",
+      "examTimeThai": "12.30 - 15.00 น.",
+      "room": "ห้องประชุมชั้น 1",
+      "assignedLecturerIds": []
+    }
+  ],
+  "submissions": [
+    {
+      "submissionId": "sub_crs_000136_monk",
+      "courseId": "crs_000136_monk",
+      "currentVersion": 0,
+      "status": "pending"
+    },
+    {
+      "submissionId": "sub_crs_sp101_monk",
+      "courseId": "crs_sp101_monk",
+      "currentVersion": 0,
+      "status": "pending"
+    },
+    {
+      "submissionId": "sub_crs_000_136_monk",
+      "courseId": "crs_000_136_monk",
+      "currentVersion": 0,
+      "status": "pending"
+    },
+    {
+      "submissionId": "sub_crs_SP_101_monk",
+      "courseId": "crs_SP_101_monk",
+      "currentVersion": 0,
+      "status": "pending"
+    },
+    {
+      "submissionId": "sub_crs_SP_102_monk",
+      "courseId": "crs_SP_102_monk",
+      "currentVersion": 0,
+      "status": "pending"
+    },
+    {
+      "submissionId": "sub_crs_000_107_monk",
+      "courseId": "crs_000_107_monk",
+      "currentVersion": 0,
+      "status": "pending"
+    },
+    {
+      "submissionId": "sub_crs_000_102_monk",
+      "courseId": "crs_000_102_monk",
+      "currentVersion": 0,
+      "status": "pending"
+    },
+    {
+      "submissionId": "sub_crs_000_230_monk",
+      "courseId": "crs_000_230_monk",
+      "currentVersion": 0,
+      "status": "pending"
+    },
+    {
+      "submissionId": "sub_crs_000_140_monk",
+      "courseId": "crs_000_140_monk",
+      "currentVersion": 0,
+      "status": "pending"
+    },
+    {
+      "submissionId": "sub_crs_000_101_monk",
+      "courseId": "crs_000_101_monk",
+      "currentVersion": 0,
+      "status": "pending"
+    },
+    {
+      "submissionId": "sub_crs_112_303_monk",
+      "courseId": "crs_112_303_monk",
+      "currentVersion": 0,
+      "status": "pending"
+    },
+    {
+      "submissionId": "sub_crs_000_241_monk",
+      "courseId": "crs_000_241_monk",
+      "currentVersion": 0,
+      "status": "pending"
+    },
+    {
+      "submissionId": "sub_crs_112_310_monk",
+      "courseId": "crs_112_310_monk",
+      "currentVersion": 0,
+      "status": "pending"
+    },
+    {
+      "submissionId": "sub_crs_112_337_monk",
+      "courseId": "crs_112_337_monk",
+      "currentVersion": 0,
+      "status": "pending"
+    },
+    {
+      "submissionId": "sub_crs_000_103_monk",
+      "courseId": "crs_000_103_monk",
+      "currentVersion": 0,
+      "status": "pending"
+    },
+    {
+      "submissionId": "sub_crs_000_238_monk",
+      "courseId": "crs_000_238_monk",
+      "currentVersion": 0,
+      "status": "pending"
+    },
+    {
+      "submissionId": "sub_crs_402_442_monk",
+      "courseId": "crs_402_442_monk",
+      "currentVersion": 0,
+      "status": "pending"
+    },
+    {
+      "submissionId": "sub_crs_401_429_monk",
+      "courseId": "crs_401_429_monk",
+      "currentVersion": 0,
+      "status": "pending"
+    },
+    {
+      "submissionId": "sub_crs_402_478_monk",
+      "courseId": "crs_402_478_monk",
+      "currentVersion": 0,
+      "status": "pending"
+    },
+    {
+      "submissionId": "sub_crs_101_417_monk",
+      "courseId": "crs_101_417_monk",
+      "currentVersion": 0,
+      "status": "pending"
+    },
+    {
+      "submissionId": "sub_crs_101_311_monk",
+      "courseId": "crs_101_311_monk",
+      "currentVersion": 0,
+      "status": "pending"
+    },
+    {
+      "submissionId": "sub_crs_101_313_monk",
+      "courseId": "crs_101_313_monk",
+      "currentVersion": 0,
+      "status": "pending"
+    },
+    {
+      "submissionId": "sub_crs_112_412_monk",
+      "courseId": "crs_112_412_monk",
+      "currentVersion": 0,
+      "status": "pending"
+    },
+    {
+      "submissionId": "sub_crs_112_309_monk",
+      "courseId": "crs_112_309_monk",
+      "currentVersion": 0,
+      "status": "pending"
+    },
+    {
+      "submissionId": "sub_crs_112_308_monk",
+      "courseId": "crs_112_308_monk",
+      "currentVersion": 0,
+      "status": "pending"
+    },
+    {
+      "submissionId": "sub_crs_112_418_monk",
+      "courseId": "crs_112_418_monk",
+      "currentVersion": 0,
+      "status": "pending"
+    },
+    {
+      "submissionId": "sub_crs_000_342_monk",
+      "courseId": "crs_000_342_monk",
+      "currentVersion": 0,
+      "status": "pending"
+    },
+    {
+      "submissionId": "sub_crs_112_301_monk",
+      "courseId": "crs_112_301_monk",
+      "currentVersion": 0,
+      "status": "pending"
+    },
+    {
+      "submissionId": "sub_crs_101_315_monk",
+      "courseId": "crs_101_315_monk",
+      "currentVersion": 0,
+      "status": "pending"
+    },
+    {
+      "submissionId": "sub_crs_101_434_monk",
+      "courseId": "crs_101_434_monk",
+      "currentVersion": 0,
+      "status": "pending"
+    },
+    {
+      "submissionId": "sub_crs_101_104_monk",
+      "courseId": "crs_101_104_monk",
+      "currentVersion": 0,
+      "status": "pending"
+    },
+    {
+      "submissionId": "sub_crs_101_418_monk",
+      "courseId": "crs_101_418_monk",
+      "currentVersion": 0,
+      "status": "pending"
+    },
+    {
+      "submissionId": "sub_crs_101_102_monk",
+      "courseId": "crs_101_102_monk",
+      "currentVersion": 0,
+      "status": "pending"
+    },
+    {
+      "submissionId": "sub_crs_402_315_monk",
+      "courseId": "crs_402_315_monk",
+      "currentVersion": 0,
+      "status": "pending"
+    },
+    {
+      "submissionId": "sub_crs_402_204_monk",
+      "courseId": "crs_402_204_monk",
+      "currentVersion": 0,
+      "status": "pending"
+    },
+    {
+      "submissionId": "sub_crs_402_316_monk",
+      "courseId": "crs_402_316_monk",
+      "currentVersion": 0,
+      "status": "pending"
+    },
+    {
+      "submissionId": "sub_crs_402_413_monk",
+      "courseId": "crs_402_413_monk",
+      "currentVersion": 0,
+      "status": "pending"
+    },
+    {
+      "submissionId": "sub_crs_402_307_monk",
+      "courseId": "crs_402_307_monk",
+      "currentVersion": 0,
+      "status": "pending"
+    },
+    {
+      "submissionId": "sub_crs_112_335_monk",
+      "courseId": "crs_112_335_monk",
+      "currentVersion": 0,
+      "status": "pending"
+    },
+    {
+      "submissionId": "sub_crs_112_421_monk",
+      "courseId": "crs_112_421_monk",
+      "currentVersion": 0,
+      "status": "pending"
+    },
+    {
+      "submissionId": "sub_crs_000_443_monk",
+      "courseId": "crs_000_443_monk",
+      "currentVersion": 0,
+      "status": "pending"
+    },
+    {
+      "submissionId": "sub_crs_112_414_monk",
+      "courseId": "crs_112_414_monk",
+      "currentVersion": 0,
+      "status": "pending"
+    },
+    {
+      "submissionId": "sub_crs_112_323_monk",
+      "courseId": "crs_112_323_monk",
+      "currentVersion": 0,
+      "status": "pending"
+    },
+    {
+      "submissionId": "sub_crs_112_306_monk",
+      "courseId": "crs_112_306_monk",
+      "currentVersion": 0,
+      "status": "pending"
+    },
+    {
+      "submissionId": "sub_crs_101_420_monk",
+      "courseId": "crs_101_420_monk",
+      "currentVersion": 0,
+      "status": "pending"
+    },
+    {
+      "submissionId": "sub_crs_101_205_monk",
+      "courseId": "crs_101_205_monk",
+      "currentVersion": 0,
+      "status": "pending"
+    },
+    {
+      "submissionId": "sub_crs_101_307_monk",
+      "courseId": "crs_101_307_monk",
+      "currentVersion": 0,
+      "status": "pending"
+    },
+    {
+      "submissionId": "sub_crs_101_323_monk",
+      "courseId": "crs_101_323_monk",
+      "currentVersion": 0,
+      "status": "pending"
+    },
+    {
+      "submissionId": "sub_crs_101_431_monk",
+      "courseId": "crs_101_431_monk",
+      "currentVersion": 0,
+      "status": "pending"
+    },
+    {
+      "submissionId": "sub_crs_402_411_monk",
+      "courseId": "crs_402_411_monk",
+      "currentVersion": 0,
+      "status": "pending"
+    },
+    {
+      "submissionId": "sub_crs_402_308_monk",
+      "courseId": "crs_402_308_monk",
+      "currentVersion": 0,
+      "status": "pending"
+    },
+    {
+      "submissionId": "sub_crs_402_314_monk",
+      "courseId": "crs_402_314_monk",
+      "currentVersion": 0,
+      "status": "pending"
+    },
+    {
+      "submissionId": "sub_crs_000_107_lay",
+      "courseId": "crs_000_107_lay",
+      "currentVersion": 0,
+      "status": "pending"
+    },
+    {
+      "submissionId": "sub_crs_000_230_lay",
+      "courseId": "crs_000_230_lay",
+      "currentVersion": 0,
+      "status": "pending"
+    },
+    {
+      "submissionId": "sub_crs_SP_101_102_lay",
+      "courseId": "crs_SP_101_102_lay",
+      "currentVersion": 0,
+      "status": "pending"
+    },
+    {
+      "submissionId": "sub_crs_000_136_lay",
+      "courseId": "crs_000_136_lay",
+      "currentVersion": 0,
+      "status": "pending"
+    },
+    {
+      "submissionId": "sub_crs_000_102_lay",
+      "courseId": "crs_000_102_lay",
+      "currentVersion": 0,
+      "status": "pending"
+    },
+    {
+      "submissionId": "sub_crs_000_140_lay",
+      "courseId": "crs_000_140_lay",
+      "currentVersion": 0,
+      "status": "pending"
+    },
+    {
+      "submissionId": "sub_crs_000_101_lay",
+      "courseId": "crs_000_101_lay",
+      "currentVersion": 0,
+      "status": "pending"
+    },
+    {
+      "submissionId": "sub_crs_000_241_lay",
+      "courseId": "crs_000_241_lay",
+      "currentVersion": 0,
+      "status": "pending"
+    },
+    {
+      "submissionId": "sub_crs_402_478_lay",
+      "courseId": "crs_402_478_lay",
+      "currentVersion": 0,
+      "status": "pending"
+    },
+    {
+      "submissionId": "sub_crs_402_429_lay",
+      "courseId": "crs_402_429_lay",
+      "currentVersion": 0,
+      "status": "pending"
+    },
+    {
+      "submissionId": "sub_crs_402_442_lay",
+      "courseId": "crs_402_442_lay",
+      "currentVersion": 0,
+      "status": "pending"
+    },
+    {
+      "submissionId": "sub_crs_000_103_lay",
+      "courseId": "crs_000_103_lay",
+      "currentVersion": 0,
+      "status": "pending"
+    },
+    {
+      "submissionId": "sub_crs_000_238_lay",
+      "courseId": "crs_000_238_lay",
+      "currentVersion": 0,
+      "status": "pending"
+    },
+    {
+      "submissionId": "sub_crs_402_413_lay",
+      "courseId": "crs_402_413_lay",
+      "currentVersion": 0,
+      "status": "pending"
+    },
+    {
+      "submissionId": "sub_crs_402_316_lay",
+      "courseId": "crs_402_316_lay",
+      "currentVersion": 0,
+      "status": "pending"
+    },
+    {
+      "submissionId": "sub_crs_402_307_lay",
+      "courseId": "crs_402_307_lay",
+      "currentVersion": 0,
+      "status": "pending"
+    },
+    {
+      "submissionId": "sub_crs_402_204_lay",
+      "courseId": "crs_402_204_lay",
+      "currentVersion": 0,
+      "status": "pending"
+    },
+    {
+      "submissionId": "sub_crs_402_315_lay",
+      "courseId": "crs_402_315_lay",
+      "currentVersion": 0,
+      "status": "pending"
+    },
+    {
+      "submissionId": "sub_crs_000_342_lay",
+      "courseId": "crs_000_342_lay",
+      "currentVersion": 0,
+      "status": "pending"
+    },
+    {
+      "submissionId": "sub_crs_402_419_lay",
+      "courseId": "crs_402_419_lay",
+      "currentVersion": 0,
+      "status": "pending"
+    },
+    {
+      "submissionId": "sub_crs_000_443_lay",
+      "courseId": "crs_000_443_lay",
+      "currentVersion": 0,
+      "status": "pending"
+    },
+    {
+      "submissionId": "sub_crs_402_320_lay",
+      "courseId": "crs_402_320_lay",
+      "currentVersion": 0,
+      "status": "pending"
+    }
+  ],
+  "versions": [],
+  "auditLogs": [
+    {
+      "logId": "log_1791013190139_0vbyr",
+      "timestamp": "2026-10-03T07:39:50.139Z",
+      "accountId": "usr_superadmin_nutpawat",
+      "accountEmail": "nutpawatbun@gmail.com",
+      "action": "LOGIN",
+      "ipAddress": "127.0.0.1",
+      "details": "Login successful as admin"
+    },
+    {
+      "logId": "log_1791012969040_g1ls3",
+      "timestamp": "2026-10-03T07:36:09.040Z",
+      "accountId": "usr_admin_01",
+      "accountEmail": "admin@mcu.ac.th",
+      "action": "LOGIN",
+      "ipAddress": "127.0.0.1",
+      "details": "Login successful as admin"
+    }
+  ],
+  "fileRegistry": {}
+}
